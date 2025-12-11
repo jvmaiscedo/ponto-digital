@@ -3,7 +3,7 @@ import Config
 # Configure your database
 config :pontodigital, Pontodigital.Repo,
   username: "postgres",
-  password: "1234",
+  password: "postgres",
   hostname: "localhost",
   database: "pontodigital_dev",
   stacktrace: true,
