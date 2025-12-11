@@ -1,0 +1,81 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-4xl text-zinc-800">
+    
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-bold text-zinc-900">Meu Ponto</h1>
+      <p class="text-zinc-600 mt-2">Registre sua jornada de trabalho abaixo.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      
+      <button 
+        phx-click="registrar_ponto" 
+        phx-value-type="entry"
+        class="flex flex-col items-center justify-center p-6 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
+      >
+        <span class="text-xl font-bold">Entrada</span>
+        <span class="text-sm opacity-90">Iniciar jornada</span>
+      </button>
+
+      <button 
+        phx-click="registrar_ponto" 
+        phx-value-type="lunch_out"
+        class="flex flex-col items-center justify-center p-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-transform active:scale-95"
+      >
+        <span class="text-xl font-bold">Ida Almoço</span>
+        <span class="text-sm opacity-90">Pausa para refeição</span>
+      </button>
+
+      <button 
+        phx-click="registrar_ponto" 
+        phx-value-type="lunch_back"
+        class="flex flex-col items-center justify-center p-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
+      >
+        <span class="text-xl font-bold">Volta Almoço</span>
+        <span class="text-sm opacity-90">Retomar jornada</span>
+      </button>
+
+      <button 
+        phx-click="registrar_ponto" 
+        phx-value-type="exit"
+        class="flex flex-col items-center justify-center p-6 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
+      >
+        <span class="text-xl font-bold">Saída</span>
+        <span class="text-sm opacity-90">Encerrar por hoje</span>
+      </button>
+
+    </div>
+
+    <div class="bg-white shadow overflow-hidden rounded-lg border border-gray-300">
+      <div class="px-4 py-5 sm:px-6 bg-gray-100 border-b border-gray-300">
+        <h3 class="text-lg leading-6 font-medium text-zinc-900">
+          Histórico Recente
+        </h3>
+      </div>
+      
+      <table class="min-w-full divide-y divide-gray-300">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold text-zinc-800 uppercase">Data/Hora</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-zinc-800 uppercase">Tipo</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-zinc-800 uppercase">Origem</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr :for={point <- @clock_ins} class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
+              <%= point.timestamp %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-700">
+              <%= point.type %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500">
+              <%= point.origin %>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</Layouts.app>
