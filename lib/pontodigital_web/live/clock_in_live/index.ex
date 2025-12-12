@@ -13,7 +13,7 @@ defmodule PontodigitalWeb.ClockInLive.Index do
     clock_ins = Timekeeping.list_clock_ins_by_user(user)
 
     # IMPORTANTE: Coloca a lista dentro do socket para o HTML usar
-    {:ok, assign(socket, clock_ins: clock_ins)}
+    {:ok, assign(socket, clock_ins: clock_ins, mode: :registrar)}
   end
 
   # 2. HANDLE EVENT: Salva o ponto quando clica no botão
@@ -26,11 +26,12 @@ defmodule PontodigitalWeb.ClockInLive.Index do
     type = Map.get(params, "type", "entry")
 
     case Timekeeping.create_clock_in(%{
-      user_id: user.id,
-      timestamp: DateTime.utc_now(),
-      type: String.to_existing_atom(type), # Converte string "entry" para atom :entry
-      origin: :web
-    }) do
+           user_id: user.id,
+           timestamp: DateTime.utc_now(),
+           # Converte string "entry" para atom :entry
+           type: String.to_existing_atom(type),
+           origin: :web
+         }) do
       {:ok, ponto} ->
         # Atualiza a lista na tela adicionando o novo ponto no topo
         socket = update(socket, :clock_ins, fn points -> [ponto | points] end)
@@ -39,5 +40,10 @@ defmodule PontodigitalWeb.ClockInLive.Index do
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Erro ao registrar ponto.")}
     end
+  end
+
+  @impl true
+  def handle_event("trocar_modo", %{"modo" => novo_modo}, socket) do
+    {:noreply, assign(socket, mode: String.to_existing_atom(novo_modo))}
   end
 end

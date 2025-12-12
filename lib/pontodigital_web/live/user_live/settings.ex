@@ -11,8 +11,8 @@ defmodule PontodigitalWeb.UserLive.Settings do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="text-center">
         <.header>
-          Account Settings
-          <:subtitle>Manage your account email address and password settings</:subtitle>
+          Gerenciamento de conta
+          <:subtitle>Gerencie o seu email e senha</:subtitle>
         </.header>
       </div>
 
@@ -24,7 +24,7 @@ defmodule PontodigitalWeb.UserLive.Settings do
           autocomplete="username"
           required
         />
-        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
+        <.button variant="primary" phx-disable-with="Changing...">Trocar Email</.button>
       </.form>
 
       <div class="divider" />
@@ -48,18 +48,18 @@ defmodule PontodigitalWeb.UserLive.Settings do
         <.input
           field={@password_form[:password]}
           type="password"
-          label="New password"
+          label="Nova senha"
           autocomplete="new-password"
           required
         />
         <.input
           field={@password_form[:password_confirmation]}
           type="password"
-          label="Confirm new password"
+          label="Confirme a nova senha"
           autocomplete="new-password"
         />
         <.button variant="primary" phx-disable-with="Saving...">
-          Save Password
+          Salvar senha
         </.button>
       </.form>
     </Layouts.app>
