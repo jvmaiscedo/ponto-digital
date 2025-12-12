@@ -30,7 +30,7 @@
         
         <button 
           phx-click="registrar_ponto" 
-          phx-value-type="entry"
+          phx-value-type="entrada"
           class="flex flex-col items-center justify-center p-6 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
         >
           <span class="text-xl font-bold">Entrada</span>
@@ -39,7 +39,7 @@
 
         <button 
           phx-click="registrar_ponto" 
-          phx-value-type="lunch_out"
+          phx-value-type="ida_almoco"
           class="flex flex-col items-center justify-center p-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-transform active:scale-95"
         >
           <span class="text-xl font-bold">Ida Almoço</span>
@@ -48,16 +48,16 @@
 
         <button 
           phx-click="registrar_ponto" 
-          phx-value-type="lunch_back"
+          phx-value-type="retorno_almoco"
           class="flex flex-col items-center justify-center p-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
         >
-          <span class="text-xl font-bold">Volta Almoço</span>
+          <span class="text-xl font-bold">Retorno Almoço</span>
           <span class="text-sm opacity-90">Retomar jornada</span>
         </button>
 
         <button 
           phx-click="registrar_ponto" 
-          phx-value-type="exit"
+          phx-value-type="saida"
           class="flex flex-col items-center justify-center p-6 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-transform active:scale-95"
         >
           <span class="text-xl font-bold">Saída</span>
@@ -85,7 +85,7 @@
           <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
             <tr :for={point <- @clock_ins} class="hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-300">
-                <%= point.timestamp %>
+                <%= format_timestamp(point.timestamp) %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-700 dark:text-zinc-300">
                 <%= point.type %>

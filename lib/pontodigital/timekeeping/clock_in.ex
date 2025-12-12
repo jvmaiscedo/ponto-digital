@@ -4,7 +4,7 @@ defmodule Pontodigital.Timekeeping.ClockIn do
 
   schema "clock_ins" do
     field :timestamp, :utc_datetime
-    field :type, Ecto.Enum, values: [:entry, :lunch_out, :lunch_back, :exit]
+    field :type, Ecto.Enum, values: [:entrada, :ida_almoco, :retorno_almoco, :saida]
     field :origin, Ecto.Enum, values: [:web, :mobile, :manual], default: :web
     belongs_to :user, Pontodigital.Accounts.User
 

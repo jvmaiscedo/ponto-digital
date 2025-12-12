@@ -29,6 +29,15 @@ defmodule Pontodigital.Timekeeping do
     |>Repo.all()
   end
 
+  def get_last_clock_in_by_user(%Pontodigital.Accounts.User{} = user) do
+    ClockIn
+    |> where(user_id: ^user.id)
+    |> order_by(desc: :timestamp)
+    |> limit(1)
+    |>Repo.one()
+  end
+
+
   @doc """
   Gets a single clock_in.
 
