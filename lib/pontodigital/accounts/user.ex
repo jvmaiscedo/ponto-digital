@@ -10,6 +10,8 @@ defmodule Pontodigital.Accounts.User do
     field :authenticated_at, :utc_datetime, virtual: true
     field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
 
+    has_one :employee, Pontodigital.Company.Employee
+
     timestamps(type: :utc_datetime)
   end
 

@@ -1,4 +1,5 @@
 defmodule PontodigitalWeb.Router do
+  # 1. REMOVI O ALIAS DAQUI POIS GERA CONFLITO COM O SCOPE
   use PontodigitalWeb, :router
 
   import PontodigitalWeb.UserAuth
@@ -13,6 +14,18 @@ defmodule PontodigitalWeb.Router do
     plug :fetch_current_scope_for_user
   end
 
+  pipeline :employee_access do
+    plug :browser
+    plug :require_authenticated_user
+    plug :require_employee
+  end
+
+  pipeline :admin_access do
+    plug :browser
+    plug :require_authenticated_user
+    plug :require_admin
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -23,18 +36,8 @@ defmodule PontodigitalWeb.Router do
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", PontodigitalWeb do
-  #   pipe_through :api
-  # end
-
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:pontodigital, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
@@ -45,8 +48,25 @@ defmodule PontodigitalWeb.Router do
     end
   end
 
-  ## Authentication routes
+  scope "/admin", PontodigitalWeb do
+    pipe_through :admin_access
 
+    live_session :admin_dashboard,
+      on_mount: [{PontodigitalWeb.UserAuth, :mount_current_scope}] do
+      live "/dashboard", AdminLive.Dashboard, :index
+    end
+  end
+
+  scope "/workspace", PontodigitalWeb do
+    pipe_through :employee_access
+
+    live_session :employee_workspace,
+      on_mount: [{PontodigitalWeb.UserAuth, :require_authenticated}] do
+      live "/ponto", ClockInLive.Index, :index
+    end
+  end
+
+  ## --- ÁREA DO USUÁRIO COMUM (Configs) ---
   scope "/", PontodigitalWeb do
     pipe_through [:browser, :require_authenticated_user]
 
@@ -54,7 +74,6 @@ defmodule PontodigitalWeb.Router do
       on_mount: [{PontodigitalWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
-      live "/users/ponto", ClockInLive.Index
     end
 
     post "/users/update-password", UserSessionController, :update_password

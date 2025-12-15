@@ -257,12 +257,12 @@ defmodule PontodigitalWeb.UserAuth do
   end
 
   @doc "Returns the path to redirect to after log in."
-  # the user was already logged in, redirect to settings
+  # O usuário já está logado, redireciona para a nova área de trabalho
   def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %Accounts.User{}}}}) do
-    ~p"/users/ponto"
+    ~p"/workspace/ponto"
   end
 
-  def signed_in_path(_), do: ~p"/users/ponto"
+  def signed_in_path(_), do: ~p"/workspace/ponto" # <--- MUDOU AQUI TAMBÉM
 
   @doc """
   Plug for routes that require the user to be authenticated.
@@ -277,6 +277,44 @@ defmodule PontodigitalWeb.UserAuth do
       |> redirect(to: ~p"/users/log-in")
       |> halt()
     end
+  end
+
+  @doc """
+  Plug para garantir que o usuário logado tem um perfil de funcionário (Employee).
+  """
+  def require_employee(conn, _opts) do
+    user = conn.assigns.current_scope.user
+
+    # Verifica se o usuário existe E se tem um employee associado
+    # Precisamos carregar o employee se ele não estiver carregado,
+    # ou assumir que faremos o preload antes.
+    # A forma mais segura é verificar no banco:
+    if user && Pontodigital.Company.get_employee_by_user(user.id) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "Acesso restrito a funcionários.")
+      # Ou para uma página de "Complete seu cadastro"
+      |> redirect(to: ~p"/")
+      |> halt()
+    end
+  end
+
+
+
+  def require_admin(conn, _opts) do
+    user = conn.assigns.current_scope.user
+
+   case user do
+      %{role: :admin} ->
+        conn
+      _ ->
+        conn
+        |> put_flash(:error, "Acesso restrito a administradores.")
+        |> redirect(to: ~p"/")
+        |> halt()
+    end
+
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

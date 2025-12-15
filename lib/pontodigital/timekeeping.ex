@@ -7,6 +7,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Repo
 
   alias Pontodigital.Timekeeping.ClockIn
+  alias Pontodigital.Company.Employee
 
   @doc """
   Returns the list of clock_ins.
@@ -21,17 +22,58 @@ defmodule Pontodigital.Timekeeping do
     Repo.all(ClockIn)
   end
 
-  def list_clock_ins_by_user(%Pontodigital.Accounts.User{} = user) do
+  def list_clock_ins_by_employee(%Employee{} = employee) do
     ClockIn
-    |> where(user_id: ^user.id)
+    |> where(employee_id: ^employee.id)
     |> order_by(desc: :timestamp)
     |> Repo.all()
   end
 
-  def get_last_clock_in_by_user(%Pontodigital.Accounts.User{} = user) do
+ def list_clock_ins_by_employee(user_id, start_date, end_date) do
+    timezone = "America/Sao_Paulo"
+
+    start_utc =
+      DateTime.new!(start_date, ~T[00:00:00], timezone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    end_utc =
+      DateTime.new!(end_date, ~T[23:59:59], timezone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
     ClockIn
-    |> where(user_id: ^user.id)
+    |> where([c], c.user_id == ^user_id)
+    |> where([c], c.timestamp >= ^start_utc and c.timestamp <= ^end_utc)
+    |> order_by(asc: :timestamp)
+    |> Repo.all()
+  end
+
+def list_clock_ins_by_user_in_day(user_id, date) do
+    timezone = "America/Sao_Paulo"
+
+
+    start_utc =
+      DateTime.new!(date, ~T[00:00:00], timezone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    end_utc =
+      DateTime.new!(date, ~T[23:59:59], timezone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    ClockIn
+    |> where([c], c.user_id == ^user_id)
+    # Comparamos o timestamp (UTC) do banco com o intervalo calculado
+    |> where([c], c.timestamp >= ^start_utc and c.timestamp <= ^end_utc)
+    |> order_by(asc: :timestamp)
+    |> Repo.all()
+  end
+
+
+
+  def get_last_clock_in_by_employee(%Employee{} = employee) do
+    ClockIn
+    |> where(employee_id: ^employee.id)
     |> order_by(desc: :timestamp)
+    |> limit(1)
     |> Repo.one()
   end
 
