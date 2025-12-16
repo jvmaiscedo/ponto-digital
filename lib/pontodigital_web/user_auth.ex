@@ -260,13 +260,11 @@ defmodule PontodigitalWeb.UserAuth do
   # O usuário já está logado, redireciona para a nova área de trabalho
   def signed_in_path(user) do
     case user.role do
-      :admin -> ~p"/admin/dashboard"
+      :admin -> ~p"/admin/"
       :employee -> ~p"/workspace/ponto"
     end
   end
 
-  # <--- MUDOU AQUI TAMBÉM
-  def signed_in_path(_), do: ~p"/workspace/ponto"
 
   @doc """
   Plug for routes that require the user to be authenticated.

@@ -22,7 +22,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
-  # Salvamento (Com a correção do CaseClauseError inclusa)
   @impl true
   def handle_event("save", %{"employee" => employee_params}, socket) do
     case Company.register_employee_with_user(employee_params) do
@@ -30,7 +29,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
         {:noreply,
          socket
          |> put_flash(:info, "Funcionário e Usuário criados com sucesso!")
-         |> push_navigate(to: ~p"/admin/dashboard")}
+         |> push_navigate(to: ~p"/admin/")}
 
       {:error, _failed_operation, changeset, _changes} ->
         {:noreply, assign(socket, form: to_form(changeset))}

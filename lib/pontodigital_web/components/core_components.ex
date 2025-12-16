@@ -498,6 +498,36 @@ defmodule PontodigitalWeb.CoreComponents do
   end
 
   @doc """
+  Renders a back navigation button.
+
+  ## Examples
+
+      <.back_button navigate={~p"/admin"} />
+      <.back_button navigate={~p"/admin"} label="Retornar" />
+  """
+  attr :navigate, :string, required: true
+  attr :label, :string, default: "Voltar"
+  attr :class, :string, default: nil
+
+  def back_button(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "flex items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50",
+        "dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700",
+        @class
+      ]}
+    >
+      <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd" />
+      </svg>
+      <%= @label %>
+    </.link>
+    """
+  end
+
+  @doc """
   Translates the errors for a field from a keyword list of errors.
   """
   def translate_errors(errors, field) when is_list(errors) do

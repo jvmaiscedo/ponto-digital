@@ -1,5 +1,5 @@
 defmodule PontodigitalWeb.Router do
-  # 1. REMOVI O ALIAS DAQUI POIS GERA CONFLITO COM O SCOPE
+
   use PontodigitalWeb, :router
 
   import PontodigitalWeb.UserAuth
@@ -53,8 +53,10 @@ defmodule PontodigitalWeb.Router do
 
     live_session :admin_dashboard,
       on_mount: [{PontodigitalWeb.UserAuth, :mount_current_scope}] do
-      live "/dashboard", AdminLive.Dashboard, :index
-      live "/funcionarios/novo", AdminLive.EmployeeManagement.New, :new
+      live "/", AdminLive.Index, :index
+      live "/funcionarios", AdminLive.EmployeeManagement.Index, :index
+      live "/novo", AdminLive.EmployeeManagement.New, :new
+      live "/metricas", AdminLive.MetricsLive.Index, :index
     end
   end
 

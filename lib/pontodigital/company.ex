@@ -8,6 +8,7 @@ defmodule Pontodigital.Company do
   alias Pontodigital.Company.Employee
   alias Ecto.Multi
   alias Pontodigital.Accounts
+  alias Pontodigital.Timekeeping
 
   def register_employee_with_user(attrs) do
     Multi.new()
@@ -33,6 +34,43 @@ defmodule Pontodigital.Company do
   """
   def list_employees do
     Repo.all(Employee)
+  end
+
+ def list_employees_with_details(search_term \\ "") do
+    query =
+      from e in Employee,
+      join: u in assoc(e, :user),
+      order_by: [asc: e.full_name]
+
+    query =
+      if search_term != "" do
+        term = "%#{search_term}%"
+        where(query, [e, u], ilike(e.full_name, ^term) or ilike(u.email, ^term))
+      else
+        query
+      end
+
+    user_preload_query = from u in Pontodigital.Accounts.User,
+      select: [:id, :email, :role]
+
+    query
+    |> Repo.all()
+    |> Repo.preload(user: user_preload_query)
+    |> populate_status()
+  end
+
+  defp populate_status(employees) do
+    Enum.map(employees, fn emp ->
+      last_point = Timekeeping.get_last_clock_in_by_employee(emp)
+      status = case last_point do
+        %{type: :entrada} -> :ativo
+        %{type: :retorno_almoco} -> :ativo
+        %{type: :ida_almoco} -> :almoco
+        _ -> :inativo
+      end
+
+      %{emp | status: status}
+    end)
   end
 
   @doc """

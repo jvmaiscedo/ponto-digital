@@ -13,6 +13,7 @@ defmodule Pontodigital.Company.Employee do
     field :email, :string, virtual: true
     field :password, :string, virtual: true
     field :role, Ecto.Enum, values: [:employee, :admin], virtual: true, default: :employee
+    field :status, Ecto.Enum, values: [:working, :offline], virtual: true, default: :offline
 
     timestamps()
   end
