@@ -1,0 +1,39 @@
+defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
+  use PontodigitalWeb, :live_view
+
+  alias Pontodigital.Company
+  alias Pontodigital.Company.Employee
+
+  @impl true
+  def mount(_params, _session, socket) do
+    changeset = Company.change_employee(%Employee{})
+
+    {:ok, assign(socket, form: to_form(changeset))}
+  end
+
+  # Validação
+  @impl true
+  def handle_event("validate", %{"employee" => employee_params}, socket) do
+    changeset =
+      %Employee{}
+      |> Company.change_employee(employee_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset))}
+  end
+
+  # Salvamento (Com a correção do CaseClauseError inclusa)
+  @impl true
+  def handle_event("save", %{"employee" => employee_params}, socket) do
+    case Company.register_employee_with_user(employee_params) do
+      {:ok, _result} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Funcionário e Usuário criados com sucesso!")
+         |> push_navigate(to: ~p"/admin/dashboard")}
+
+      {:error, _failed_operation, changeset, _changes} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+end

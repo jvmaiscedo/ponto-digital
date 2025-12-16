@@ -54,6 +54,7 @@ defmodule PontodigitalWeb.Router do
     live_session :admin_dashboard,
       on_mount: [{PontodigitalWeb.UserAuth, :mount_current_scope}] do
       live "/dashboard", AdminLive.Dashboard, :index
+      live "/funcionarios/novo", AdminLive.EmployeeManagement.New, :new
     end
   end
 

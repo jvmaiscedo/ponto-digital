@@ -29,7 +29,7 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.all()
   end
 
- def list_clock_ins_by_employee(user_id, start_date, end_date) do
+  def list_clock_ins_by_employee(user_id, start_date, end_date) do
     timezone = "America/Sao_Paulo"
 
     start_utc =
@@ -47,9 +47,8 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.all()
   end
 
-def list_clock_ins_by_user_in_day(user_id, date) do
+  def list_clock_ins_by_user_in_day(user_id, date) do
     timezone = "America/Sao_Paulo"
-
 
     start_utc =
       DateTime.new!(date, ~T[00:00:00], timezone)
@@ -66,8 +65,6 @@ def list_clock_ins_by_user_in_day(user_id, date) do
     |> order_by(asc: :timestamp)
     |> Repo.all()
   end
-
-
 
   def get_last_clock_in_by_employee(%Employee{} = employee) do
     ClockIn

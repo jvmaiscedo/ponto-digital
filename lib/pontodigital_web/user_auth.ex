@@ -37,7 +37,7 @@ defmodule PontodigitalWeb.UserAuth do
 
     conn
     |> create_or_extend_session(user, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect(to: user_return_to || signed_in_path(user))
   end
 
   @doc """
@@ -258,11 +258,15 @@ defmodule PontodigitalWeb.UserAuth do
 
   @doc "Returns the path to redirect to after log in."
   # O usuário já está logado, redireciona para a nova área de trabalho
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %Accounts.User{}}}}) do
-    ~p"/workspace/ponto"
+  def signed_in_path(user) do
+    case user.role do
+      :admin -> ~p"/admin/dashboard"
+      :employee -> ~p"/workspace/ponto"
+    end
   end
 
-  def signed_in_path(_), do: ~p"/workspace/ponto" # <--- MUDOU AQUI TAMBÉM
+  # <--- MUDOU AQUI TAMBÉM
+  def signed_in_path(_), do: ~p"/workspace/ponto"
 
   @doc """
   Plug for routes that require the user to be authenticated.
@@ -300,21 +304,19 @@ defmodule PontodigitalWeb.UserAuth do
     end
   end
 
-
-
   def require_admin(conn, _opts) do
     user = conn.assigns.current_scope.user
 
-   case user do
+    case user do
       %{role: :admin} ->
         conn
+
       _ ->
         conn
         |> put_flash(:error, "Acesso restrito a administradores.")
         |> redirect(to: ~p"/")
         |> halt()
     end
-
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

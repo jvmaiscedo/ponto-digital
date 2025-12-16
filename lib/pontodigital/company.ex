@@ -5,8 +5,22 @@ defmodule Pontodigital.Company do
 
   import Ecto.Query, warn: false
   alias Pontodigital.Repo
-
   alias Pontodigital.Company.Employee
+  alias Ecto.Multi
+  alias Pontodigital.Accounts
+
+  def register_employee_with_user(attrs) do
+    Multi.new()
+    |> Multi.run(:user, fn _repo, _changes ->
+      Accounts.register_user(attrs)
+    end)
+    |> Multi.run(:employee, fn _repo, %{user: user} ->
+      attrs
+      |> Map.put("user_id", user.id)
+      |> create_employee()
+    end)
+    |> Repo.transaction()
+  end
 
   @doc """
   Returns the list of employees.
@@ -37,7 +51,6 @@ defmodule Pontodigital.Company do
   """
   def get_employee!(id), do: Repo.get!(Employee, id)
 
-
   def get_employee_by_user(user_id) do
     Repo.get_by(Employee, user_id: user_id)
   end
@@ -49,8 +62,6 @@ defmodule Pontodigital.Company do
   def count_employees() do
     Repo.aggregate(Employee, :count, :id)
   end
-
-
 
   @doc """
   Creates a employee.

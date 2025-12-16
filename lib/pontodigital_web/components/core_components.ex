@@ -445,6 +445,14 @@ defmodule PontodigitalWeb.CoreComponents do
     """
   end
 
+  def label(assigns) do
+    ~H"""
+    <label for={@for} class="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-200">
+      {render_slot(@inner_block)}
+    </label>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

@@ -10,13 +10,17 @@ defmodule Pontodigital.Company.Employee do
     belongs_to :user, Pontodigital.Accounts.User
     has_many :clock_ins, Pontodigital.Timekeeping.ClockIn
 
+    field :email, :string, virtual: true
+    field :password, :string, virtual: true
+    field :role, Ecto.Enum, values: [:employee, :admin], virtual: true, default: :employee
+
     timestamps()
   end
 
   @doc false
- def changeset(employee, attrs) do
+  def changeset(employee, attrs) do
     employee
-    |> cast(attrs, [:full_name, :position, :admission_date, :user_id])
-    |> validate_required([:full_name, :user_id])
+    |> cast(attrs, [:full_name, :position, :admission_date, :user_id, :email, :password, :role])
+    |> validate_required([:full_name, :position, :admission_date, :email, :password, :role])
   end
 end
