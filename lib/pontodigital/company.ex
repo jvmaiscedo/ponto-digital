@@ -73,6 +73,16 @@ defmodule Pontodigital.Company do
     end)
   end
 
+  def change_employee_for_admin(employee, attrs \\ %{}) do
+    Employee.admin_update_changeset(employee, attrs)
+  end
+
+  def update_employee_as_admin(employee, attrs) do
+    employee
+    |> Employee.admin_update_changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Gets a single employee.
 

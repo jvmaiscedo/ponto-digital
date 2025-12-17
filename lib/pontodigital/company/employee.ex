@@ -24,4 +24,11 @@ defmodule Pontodigital.Company.Employee do
     |> cast(attrs, [:full_name, :position, :admission_date, :user_id, :email, :password, :role])
     |> validate_required([:full_name, :position, :admission_date, :email, :password, :role])
   end
+
+  def admin_update_changeset(employee, attrs) do
+    employee
+    |> cast(attrs, [:full_name, :position, :admission_date]) # Liste apenas o que pode mudar
+    |> validate_required([:full_name, :position])
+    # Sem validação de senha ou email aqui!
+  end
 end

@@ -72,6 +72,8 @@ defmodule PontodigitalWeb do
       import Phoenix.Controller,
         only: [get_csrf_token: 0, view_module: 1, view_template: 1]
 
+      import PontodigitalWeb.CoreComponents
+
       # Include general helpers for rendering HTML
       unquote(html_helpers())
     end
