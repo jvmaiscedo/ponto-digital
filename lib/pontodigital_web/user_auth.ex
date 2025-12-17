@@ -6,6 +6,7 @@ defmodule PontodigitalWeb.UserAuth do
 
   alias Pontodigital.Accounts
   alias Pontodigital.Accounts.Scope
+  alias Pontodigital.Company
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in UserToken.
@@ -261,7 +262,7 @@ defmodule PontodigitalWeb.UserAuth do
   def signed_in_path(user) do
     case user.role do
       :admin -> ~p"/admin/"
-      :employee -> ~p"/workspace/ponto"
+      :employee -> ~p"/workspace/ponto" #todo: impedir login de funcionario desligado da empresa.
     end
   end
 

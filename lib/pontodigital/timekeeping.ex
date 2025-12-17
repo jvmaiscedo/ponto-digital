@@ -60,7 +60,6 @@ defmodule Pontodigital.Timekeeping do
 
     ClockIn
     |> where([c], c.user_id == ^user_id)
-    # Comparamos o timestamp (UTC) do banco com o intervalo calculado
     |> where([c], c.timestamp >= ^start_utc and c.timestamp <= ^end_utc)
     |> order_by(asc: :timestamp)
     |> Repo.all()
