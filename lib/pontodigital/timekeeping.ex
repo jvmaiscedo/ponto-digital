@@ -29,7 +29,16 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.all()
   end
 
-  def list_clock_ins_by_employee(user_id, start_date, end_date) do
+  def get_monthly_clock_ins(employee_id, year, month) do
+    start_date = Date.new!(year, month, 1)
+
+    end_date = Date.end_of_month(start_date)
+
+    list_clock_ins_by_employee(employee_id, start_date, end_date)
+  end
+
+  @spec list_clock_ins_by_employee(any(), Date.t(), Date.t()) :: any()
+  defp list_clock_ins_by_employee(employee_id, start_date, end_date) do
     timezone = "America/Sao_Paulo"
 
     start_utc =
@@ -41,13 +50,13 @@ defmodule Pontodigital.Timekeeping do
       |> DateTime.shift_zone!("Etc/UTC")
 
     ClockIn
-    |> where([c], c.user_id == ^user_id)
+    |> where([c], c.employee_id == ^employee_id)
     |> where([c], c.timestamp >= ^start_utc and c.timestamp <= ^end_utc)
     |> order_by(asc: :timestamp)
     |> Repo.all()
   end
 
-  def list_clock_ins_by_user_in_day(user_id, date) do
+  def list_clock_ins_by_user_in_day(employee_id, date) do
     timezone = "America/Sao_Paulo"
 
     start_utc =
@@ -59,7 +68,7 @@ defmodule Pontodigital.Timekeeping do
       |> DateTime.shift_zone!("Etc/UTC")
 
     ClockIn
-    |> where([c], c.user_id == ^user_id)
+    |> where([c], c.employee_id == ^employee_id)
     |> where([c], c.timestamp >= ^start_utc and c.timestamp <= ^end_utc)
     |> order_by(asc: :timestamp)
     |> Repo.all()

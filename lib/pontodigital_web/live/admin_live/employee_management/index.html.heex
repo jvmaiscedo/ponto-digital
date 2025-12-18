@@ -20,6 +20,9 @@
         </div>
       </form>
     </div>
+    <div>
+      <PontodigitalWeb.Layouts.theme_toggle />
+    </div>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm">
@@ -67,10 +70,10 @@
                 aria-label="Editar">
                 <.icon name="hero-pencil-square" class="size-5" />
               </.link>
-              <.link phx-click={JS.push("delete", value: %{id: employee.id})}
-                data-confirm="Tem certeza que deseja excluir este funcionário?"
+              <.link phx-click={JS.push("desativar_funcionario", value: %{id: employee.id})}
+                data-confirm="Tem certeza que deseja desativar este funcionário?"
                 class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
-                <.icon name="hero-trash" class="size-5" />
+                <.icon name="hero-link" class="size-5" />
               </.link>
             </div>
           </td>

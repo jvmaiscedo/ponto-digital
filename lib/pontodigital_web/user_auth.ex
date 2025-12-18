@@ -6,7 +6,7 @@ defmodule PontodigitalWeb.UserAuth do
 
   alias Pontodigital.Accounts
   alias Pontodigital.Accounts.Scope
-  alias Pontodigital.Company
+  # alias Pontodigital.Company
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in UserToken.
@@ -34,11 +34,20 @@ defmodule PontodigitalWeb.UserAuth do
   or falls back to the `signed_in_path/1`.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    user_return_to = get_session(conn, :user_return_to)
 
-    conn
-    |> create_or_extend_session(user, params)
-    |> redirect(to: user_return_to || signed_in_path(user))
+    case user.status do
+      true ->
+        user_return_to = get_session(conn, :user_return_to)
+        conn
+        |> create_or_extend_session(user, params)
+        |> redirect(to: user_return_to || signed_in_path(user))
+
+      false ->
+        conn
+        |> Phoenix.Controller.put_flash(:error, "Sua conta está inativa.")
+        |> Phoenix.Controller.redirect(to: ~p"/users/log-in")
+        |> halt()
+    end
   end
 
   @doc """
@@ -262,10 +271,10 @@ defmodule PontodigitalWeb.UserAuth do
   def signed_in_path(user) do
     case user.role do
       :admin -> ~p"/admin/"
-      :employee -> ~p"/workspace/ponto" #todo: impedir login de funcionario desligado da empresa.
+      # todo: impedir login de funcionario desligado da empresa.
+      :employee -> ~p"/workspace/ponto"
     end
   end
-
 
   @doc """
   Plug for routes that require the user to be authenticated.

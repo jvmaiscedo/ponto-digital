@@ -1,6 +1,7 @@
 defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   use PontodigitalWeb, :live_view
   alias Pontodigital.Company
+  alias Pontodigital.Accounts
 
   @impl true
   @spec mount(any(), any(), any()) :: {:ok, any()}
@@ -24,15 +25,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   end
 
   @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    employee = Company.get_employee!(id)
+  def handle_event("desativar_funcionario", %{"id" => id}, socket) do
+    employee =
+      Company.get_employee!(id)
+      |> Pontodigital.Repo.preload(:user)
 
-    case Company.delete_employee(employee) do
+    case Accounts.update_user_status(employee.user, %{status: false}) do
       {:ok, _} ->
-        {:noreply, put_flash(socket, :info, "Funcionário excluído com sucesso.")}
+        {:noreply, put_flash(socket, :info, "Funcionário desativado com sucesso.")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Erro ao excluir funcionário.")}
+        {:noreply, put_flash(socket, :error, "Erro ao desativar funcionário.")}
     end
   end
 
@@ -53,16 +56,16 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
     |> assign(:employee, nil)
   end
 
-  #funções auxiliares para modificar a cor do status
+  # funções auxiliares para modificar a cor do status
   defp status_class(status) when status in [:inativo, "inativo"] do
     "bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-400/20"
   end
 
   defp status_class(status) when status in [:almoco, "almoco"] do
-    "bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-400/20"
+    "bg-yellow-50 text-yellow-800 ring-yellow-600/10 dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-400/20"
   end
 
   defp status_class(_status) do
-    "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-400/20"
+    "bg-green-50 text-green-700 ring-green-600/10 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-400/20"
   end
 end

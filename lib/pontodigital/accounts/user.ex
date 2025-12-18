@@ -9,6 +9,7 @@ defmodule Pontodigital.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
     field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
+    field :status, :boolean
 
     has_one :employee, Pontodigital.Company.Employee
 
@@ -142,4 +143,11 @@ defmodule Pontodigital.Accounts.User do
     |> validate_email(opts)
     |> validate_password(opts)
   end
+
+  def status_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:status])
+    |> validate_required([:status])
+  end
+
 end

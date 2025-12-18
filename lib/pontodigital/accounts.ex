@@ -180,6 +180,12 @@ defmodule Pontodigital.Accounts do
     |> update_user_and_delete_all_tokens()
   end
 
+  def update_user_status(user, attrs) do
+    user
+    |> User.status_changeset(attrs)
+    |> Repo.update()
+  end
+
   ## Session
 
   @doc """
@@ -293,6 +299,8 @@ defmodule Pontodigital.Accounts do
     Repo.delete_all(from(UserToken, where: [token: ^token, context: "session"]))
     :ok
   end
+
+
 
   ## Token helper
 
