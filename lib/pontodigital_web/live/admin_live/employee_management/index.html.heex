@@ -75,7 +75,11 @@
                 class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
                 <.icon name="hero-link" class="size-5" />
               </.link>
-            </div>
+              <.link navigate={~p"/admin/funcionarios/#{employee.id}"}
+                class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                <.icon name="hero-eye" class="size-5"/>
+              </.link>
+              </div>
           </td>
         </tr>
       </tbody>

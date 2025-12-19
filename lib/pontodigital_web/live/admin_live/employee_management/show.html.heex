@@ -1,5 +1,150 @@
-<div>
-    <.table>
-    
-    </.table>
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <.back_button navigate={~p"/admin/funcionarios"} />
+      <div>
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-zinc-100">
+          Espelho de Ponto
+        </h1>
+        <p class="text-sm text-gray-500 dark:text-zinc-400">
+          Visualizando registros do funcionário <span class="font-bold">
+            <%= @employee_name %>
+          </span>
+        </p>
+      </div>
+    </div>
+    <div class="flex items-end gap-2"> <form phx-submit="mudar_periodo" class="flex items-center gap-2">
+    <div class="relative">
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+        <.icon name="hero-calendar" class="size-5 text-gray-400" />
+      </div>
+      
+      <input 
+        type="month" 
+        name="periodo" 
+        value={@mes_selecionado}
+        required 
+        class="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 shadow-sm"
+      />
+    </div>
+
+    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+      Filtrar
+    </button>
+  </form>
+</div>
+    <div class="flex gap-2">
+      <button
+        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        Exportar PDF(not yet)
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm mt-8">
+    <div class="max-h-[80vh] overflow-y-auto relative">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700 text-sm">
+        <thead class="bg-gray-50 dark:bg-zinc-900">
+          <tr>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-left font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Data
+            </th>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-center font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Entrada
+            </th>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-center font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Ida almoço
+            </th>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-center font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Retorno almoço
+            </th>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-center font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Saída
+            </th>
+            <th scope="col"
+              class="sticky top-0 z-10 bg-gray-50 dark:bg-zinc-900 px-4 py-3 text-right font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider border-b border-gray-200 dark:border-zinc-700">
+              Saldo
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
+          <%= for day <- @dias_do_mes do %>
+            <%
+              # Busca o Mapa Tipado do dia (ou um mapa vazio se não houver batidas)
+              pontos_dia = Map.get(@mapa_pontos, day, %{})
+              
+              # Agora acessamos explicitamente pelo TIPO
+              entrada = pontos_dia[:entrada]
+              ida_almoco = pontos_dia[:ida_almoco]
+              retorno_almoco = pontos_dia[:retorno_almoco]
+              saida = pontos_dia[:saida]
+              
+              is_weekend = Date.day_of_week(day) in [6, 7]
+              row_class = if is_weekend, do: "bg-gray-50 dark:bg-zinc-800/50", else: "hover:bg-gray-50 dark:hover:bg-zinc-700/50"
+              text_class = if is_weekend, do: "text-gray-400 dark:text-zinc-500", else: "text-gray-900 dark:text-zinc-100"
+            %>
+
+            <tr class={"transition-colors #{row_class}"}>
+              <td class="px-4 py-2 whitespace-nowrap">
+                <div class="flex flex-col">
+                  <span class={"font-medium #{text_class}"}>
+                    <%= Calendar.strftime(day, "%d/%m") %>
+                  </span>
+                  <span class="text-[10px] uppercase text-gray-400">
+                     <%= dia_semana(day) %>
+                  </span>
+                </div>
+              </td>
+
+              <td class="px-4 py-2 whitespace-nowrap text-center">
+                 <%= if entrada do %>
+                    <span class="inline-flex items-center rounded bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                      <%= entrada.time %>
+                    </span>
+                 <% else %>
+                    <span class="text-gray-300 text-xs">-</span>
+                 <% end %>
+              </td>
+
+              <td class="px-4 py-2 whitespace-nowrap text-center">
+                 <%= if ida_almoco do %>
+                    <span class="text-xs text-gray-600 dark:text-zinc-300"><%= ida_almoco.time %></span>
+                 <% else %>
+                    <span class="text-gray-300 text-xs">-</span>
+                 <% end %>
+              </td>
+
+              <td class="px-4 py-2 whitespace-nowrap text-center">
+                 <%= if retorno_almoco do %>
+                    <span class="text-xs text-gray-600 dark:text-zinc-300"><%= retorno_almoco.time %></span>
+                 <% else %>
+                    <span class="text-gray-300 text-xs">-</span>
+                 <% end %>
+              </td>
+
+              <td class="px-4 py-2 whitespace-nowrap text-center">
+                 <%= if saida do %>
+                    <span class="inline-flex items-center rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                      <%= saida.time %>
+                    </span>
+                 <% else %>
+                    <span class="text-gray-300 text-xs">-</span>
+                 <% end %>
+              </td>
+
+              <td class="px-4 py-2 whitespace-nowrap text-right font-mono text-xs text-gray-500">
+                --:--
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

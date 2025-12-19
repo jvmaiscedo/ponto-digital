@@ -60,7 +60,6 @@ defmodule PontodigitalWeb.ClockInLive.Index do
             :new -> "Você deve realizar uma entrada primeiro."
             _ -> "Movimento inválido! O último registro foi: #{last_type}"
           end
-
         {:noreply, put_flash(socket, :error, mensagem_erro)}
       end
     end
@@ -78,9 +77,9 @@ defmodule PontodigitalWeb.ClockInLive.Index do
     {:noreply, assign(socket, mode: modo_atom)}
   end
 
-  # Validations (Mantém a mesma lógica, pois lida com atoms)
+
   defp valid_sequence?(:new, :entrada), do: true
-  defp valid_sequence?(:entrada, :saida), do: true # Saída direta sem almoço
+  defp valid_sequence?(:entrada, :saida), do: true
   defp valid_sequence?(:entrada, :ida_almoco), do: true
   defp valid_sequence?(:ida_almoco, :retorno_almoco), do: true
   defp valid_sequence?(:retorno_almoco, :saida), do: true

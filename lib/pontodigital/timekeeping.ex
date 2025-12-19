@@ -82,6 +82,55 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.one()
   end
 
+  def list_timesheet(employee_id, year, month, timezone \\ "America/Sao_Paulo") do
+    start_date = Date.new!(year, month, 1)
+    end_date = Date.end_of_month(start_date)
+
+    from_utc =
+      Timex.to_datetime(start_date, timezone)
+      |> Timex.beginning_of_day()
+      |> Timex.to_datetime("UTC")
+
+    to_utc =
+      Timex.to_datetime(end_date, timezone)
+      |> Timex.end_of_day()
+      |> Timex.to_datetime("UTC")
+
+    query =
+      from c in ClockIn,
+        where: c.employee_id == ^employee_id,
+        where: c.timestamp >= ^from_utc and c.timestamp <= ^to_utc,
+        order_by: [asc: c.timestamp]
+
+    Repo.all(query)
+    |> organize_by_day(timezone)
+  end
+
+  defp organize_by_day(clock_ins, timezone) do
+    clock_ins
+    |> Enum.map(fn clock_in ->
+      local_datetime = Timex.to_datetime(clock_in.timestamp, timezone)
+
+      %{
+        original: clock_in,
+        type: clock_in.type,
+        date: Timex.to_date(local_datetime),
+        time: Timex.format!(local_datetime, "{h24}:{m}")
+      }
+    end)
+    |> Enum.group_by(fn item -> item.date end)
+    |> Map.new(fn {date, points_list} ->
+      points_map = %{
+        entrada: Enum.find(points_list, fn p -> p.type == :entrada end),
+        ida_almoco: Enum.find(points_list, fn p -> p.type == :ida_almoco end),
+        retorno_almoco: Enum.find(points_list, fn p -> p.type == :retorno_almoco end),
+        saida: Enum.find(points_list, fn p -> p.type == :saida end)
+      }
+
+      {date, points_map}
+    end)
+  end
+
   @doc """
   Gets a single clock_in.
 
