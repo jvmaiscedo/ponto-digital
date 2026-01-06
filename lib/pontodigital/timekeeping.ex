@@ -5,8 +5,9 @@ defmodule Pontodigital.Timekeeping do
 
   import Ecto.Query, warn: false
   alias Pontodigital.Repo
-
+  alias Ecto.Multi
   alias Pontodigital.Timekeeping.ClockIn
+  alias Pontodigital.Timekeeping.ClockInAdjustment
   alias Pontodigital.Company.Employee
 
   @doc """
@@ -181,6 +182,26 @@ defmodule Pontodigital.Timekeeping do
     clock_in
     |> ClockIn.changeset(attrs)
     |> Repo.update()
+  end
+
+  def admin_update_clock_in(%ClockIn{} = clock_in, attrs, admin_id) do
+    adjustment_attrs = %{
+      "clock_in_id" => clock_in.id,
+      "admin_user_id" => admin_id,
+      "previous_timestamp" => clock_in.timestamp,
+      "previous_type" => clock_in.type,
+      "justification" => attrs["justification"],
+      "observation" => attrs["observation"]
+    }
+
+    clock_in_changeset = ClockIn.changeset(clock_in, Map.put(attrs, "is_edited", true))
+
+    adjustment_changeset = ClockInAdjustment.changeset(%ClockInAdjustment{}, adjustment_attrs)
+
+    Multi.new()
+    |> Multi.update(:clock_in, clock_in_changeset)
+    |> Multi.insert(:adjustment, adjustment_changeset)
+    |> Repo.transaction()
   end
 
   @doc """
