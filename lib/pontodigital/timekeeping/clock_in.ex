@@ -17,7 +17,7 @@ defmodule Pontodigital.Timekeeping.ClockIn do
   @doc false
   def changeset(clock_in, attrs) do
     clock_in
-    |> cast(attrs, [:timestamp, :type, :origin, :employee_id])
+    |> cast(attrs, [:timestamp, :type, :origin, :employee_id, :is_edited])
     |> validate_required([:timestamp, :type, :origin, :employee_id])
   end
 end

@@ -2,7 +2,7 @@ defmodule Pontodigital.Timekeeping.ClockInAdjustment do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "clock_in_adjustment" do
+  schema "clock_in_adjustments" do
     field :justification, :string
     field :observation, :string
     field :previous_timestamp, :utc_datetime
@@ -26,6 +26,6 @@ defmodule Pontodigital.Timekeeping.ClockInAdjustment do
       :clock_in_id,
       :admin_user_id
     ])
-    |> validate_required([:justificationm, :clock_in_id, :admin_user_id])
+    |> validate_required([:justification, :clock_in_id, :admin_user_id])
   end
 end
