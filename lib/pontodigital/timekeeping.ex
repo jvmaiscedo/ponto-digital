@@ -204,6 +204,10 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.transaction()
   end
 
+  def change_adjustment(%ClockInAdjustment{} = adjustment, attrs \\ %{}) do
+    ClockInAdjustment.changeset(adjustment, attrs)
+  end
+
   @doc """
   Deletes a clock_in.
 

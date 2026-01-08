@@ -1,16 +1,40 @@
 defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   use PontodigitalWeb, :live_view
   alias Pontodigital.Timekeeping
+  alias Pontodigital.Timekeeping.ClockInAdjustment
   alias Pontodigital.Company
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, editing_clock_in: nil)}
   end
 
   @impl true
   def handle_params(%{"id" => id}, _uri, socket) do
     data_atual = Date.utc_today()
     {:noreply, espelho_mes(socket, id, data_atual)}
+  end
+
+  @impl true
+  def handle_event("alterar_ponto", %{"id" => id}, socket) do
+    ponto = Timekeeping.get_clock_in!(id)
+
+    changeset = Timekeeping.change_adjustment(%ClockInAdjustment{})
+
+    {:noreply,
+     assign(socket,
+       editing_clock_in: ponto,
+       form: to_form(changeset)
+     )}
+  end
+
+  @impl true
+  def handle_event("fechar_modal", _params, socket) do
+    {:noreply, assign(socket, editing_clock_in: nil)}
+  end
+
+  @impl true
+  def handle_event("salvar_edicao", %{"clock_in_adjustment" => params}, socket) do
+    {:noreply, assign(socket, editing_clock_in: nil)}
   end
 
   @impl true
