@@ -101,6 +101,7 @@ defmodule Pontodigital.Timekeeping do
       from c in ClockIn,
         where: c.employee_id == ^employee_id,
         where: c.timestamp >= ^from_utc and c.timestamp <= ^to_utc,
+        where: c.status == :valid,
         order_by: [asc: c.timestamp]
 
     Repo.all(query)
@@ -201,6 +202,25 @@ defmodule Pontodigital.Timekeeping do
     Multi.new()
     |> Multi.update(:clock_in, clock_in_changeset)
     |> Multi.insert(:adjustment, adjustment_changeset)
+    |> Repo.transaction()
+  end
+
+  def invalidate_clock_in(%ClockIn{} = clock_in, justification, observation, admin_id) do
+    adjustment_attrs = %{
+      "clock_in_id" => clock_in.id,
+      "admin_user_id" => admin_id,
+      "previous_timestamp" => clock_in.timestamp,
+      "previous_type" => clock_in.type,
+      "justification" => justification,
+      "observation" => observation
+    }
+
+    Multi.new()
+    |> Multi.update(:clock_in, ClockIn.changeset(clock_in, %{status: :invalid}))
+    |> Multi.insert(
+      :adjustment,
+      ClockInAdjustment.changeset(%ClockInAdjustment{}, adjustment_attrs)
+    )
     |> Repo.transaction()
   end
 

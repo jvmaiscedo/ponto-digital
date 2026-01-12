@@ -3,7 +3,15 @@ defmodule Pontodigital.Timekeeping.ClockInAdjustment do
   import Ecto.Changeset
 
   schema "clock_in_adjustments" do
-    field :justification, :string
+    field :justification, Ecto.Enum,
+      values: [
+        :esquecimento,
+        :problema_tecnico,
+        :atestado_medico,
+        :hora_extra_autorizada,
+        :outros
+      ]
+
     field :observation, :string
     field :previous_timestamp, :utc_datetime
 

@@ -39,41 +39,43 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   @impl true
   def handle_event("salvar_edicao", %{"clock_in_adjustment" => params}, socket) do
     clock_in = socket.assigns.editing_clock_in
-
     admin_id = socket.assigns.current_scope.user.id
-    utc_timestamp = parse_local_to_utc(params["timestamp"])
 
-    attrs = %{
-      "timestamp" => utc_timestamp,
-      "justification" => params["justification"],
-      "type" => params["type"]
-    }
+    observation = params["observation"]
 
-    case Timekeeping.admin_update_clock_in(clock_in, attrs, admin_id) do
-      {:ok, _result} ->
-        # Sucesso:
-        # a) Pegamos a data atual do contexto para recarregar a lista
-        # b) Atualizamos a tabela chamando load_timesheet novamente
+    case params["type"] do
+      "invalidado" ->
+        case Timekeeping.invalidate_clock_in(
+               clock_in,
+               params["justification"],
+               observation,
+               admin_id
+             ) do
+          {:ok, _} ->
+            {:noreply, reload_timesheet_and_close(socket, "Registro invalidado com sucesso.")}
 
-        # Dica: Recupere o employee_id e a data que já estão no socket
-        employee_id = socket.assigns.employee_id
+          {:error, _op, changeset, _} ->
+            {:noreply, assign(socket, form: to_form(changeset))}
+        end
 
-        # Precisamos da data atual selecionada. O socket tem 'mes_selecionado' como string (ex: "2023-10")
-        # Vamos usar uma lógica simples para pegar o primeiro dia desse mês para recarregar
-        data_recarga = Date.from_iso8601!("#{socket.assigns.mes_selecionado}-01")
+      _outro_tipo ->
+        # Fluxo de edição (Mudança de horário/tipo)
+        utc_timestamp = parse_local_to_utc(params["novo_horario"])
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Ponto corrigido com sucesso!")
-         # Fecha o modal
-         |> assign(editing_clock_in: nil)
-         # Atualiza a tabela
-         |> load_timesheet(employee_id, data_recarga)}
+        attrs = %{
+          "timestamp" => utc_timestamp,
+          "justification" => params["justification"],
+          "observation" => observation,
+          "type" => params["type"]
+        }
 
-      {:error, _failed_operation, changeset, _changes} ->
-        # Erro (Ex: justificativa vazia ou data inválida):
-        # Mantém o modal aberto e mostra os erros no form
-        {:noreply, assign(socket, form: to_form(changeset))}
+        case Timekeeping.admin_update_clock_in(clock_in, attrs, admin_id) do
+          {:ok, _} ->
+            {:noreply, reload_timesheet_and_close(socket, "Ponto corrigido com sucesso.")}
+
+          {:error, _op, changeset, _} ->
+            {:noreply, assign(socket, form: to_form(changeset))}
+        end
     end
   end
 
@@ -86,6 +88,16 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   # Private functions
+
+  defp reload_timesheet_and_close(socket, message) do
+    employee_id = socket.assigns.employee_id
+    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+
+    socket
+    |> put_flash(:info, message)
+    |> assign(editing_clock_in: nil)
+    |> load_timesheet(employee_id, date)
+  end
 
   defp load_timesheet(socket, employee_id, date) do
     mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)

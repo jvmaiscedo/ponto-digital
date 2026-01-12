@@ -196,10 +196,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
           label="Tipo"
           prompt="Selecione um tipo"
           options={[
-            {"Entrada", "entrada"},
-            {"Saída", "saida"},
-            {"Ida para Almoço", "ida_almoco"},
-            {"Volta do Almoço", "volta_almoco"}
+            {"Entrada", :entrada},
+            {"Saída", :saida},
+            {"Ida para Almoço", :ida_almoco},
+            {"Volta do Almoço", :retorno_almoco},
+            {"Invalidar registro", :invalidado}
           ]}
           required
         />
@@ -213,9 +214,24 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
 
         <.input
           field={@form[:justification]}
-          type="textarea"
-          label="Motivo da alteração"
+          type="select"
+          label="Justificativa"
+          prompt="Selecione um motivo"
+          options={[
+            {"Esquecimento", :esquecimento},
+            {"Problema Técnico", :problema_tecnico},
+            {"Atestado Médico", :atestado_medico},
+            {"Hora Extra", :hora_extra_autorizada},
+            {"Outros", :outros}
+          ]}
           required
+        />
+
+        <.input
+          field={@form[:observation]}
+          type="textarea"
+          label="Observações (Detalhes)"
+          placeholder="Ex: O relógio estava sem rede..."
         />
 
         <:actions>

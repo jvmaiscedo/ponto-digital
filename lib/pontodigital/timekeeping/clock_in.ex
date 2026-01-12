@@ -6,7 +6,7 @@ defmodule Pontodigital.Timekeeping.ClockIn do
     field :timestamp, :utc_datetime
     field :type, Ecto.Enum, values: [:entrada, :ida_almoco, :retorno_almoco, :saida]
     field :origin, Ecto.Enum, values: [:web, :mobile, :manual], default: :web
-    field :status, Ecto.Enum, values: [:valid, :ignored], default: :valid
+    field :status, Ecto.Enum, values: [:valid, :invalid], default: :valid
     field :is_edited, :boolean, default: false
     belongs_to :employee, Pontodigital.Company.Employee
     has_many :adjustments, Pontodigital.Timekeeping.ClockInAdjustment
@@ -17,7 +17,7 @@ defmodule Pontodigital.Timekeeping.ClockIn do
   @doc false
   def changeset(clock_in, attrs) do
     clock_in
-    |> cast(attrs, [:timestamp, :type, :origin, :employee_id, :is_edited])
-    |> validate_required([:timestamp, :type, :origin, :employee_id])
+    |> cast(attrs, [:timestamp, :type, :origin, :employee_id, :status, :is_edited])
+    |> validate_required([:timestamp, :type, :origin, :status, :employee_id])
   end
 end
