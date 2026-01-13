@@ -38,7 +38,6 @@ defmodule Pontodigital.Timekeeping do
     list_clock_ins_by_employee(employee_id, start_date, end_date)
   end
 
-  @spec list_clock_ins_by_employee(any(), Date.t(), Date.t()) :: any()
   defp list_clock_ins_by_employee(employee_id, start_date, end_date) do
     timezone = "America/Sao_Paulo"
 
@@ -287,6 +286,38 @@ defmodule Pontodigital.Timekeeping do
     Multi.new()
     |> Multi.update(:clock_in, clock_in_changeset)
     |> Multi.insert(:adjustment, adjustment_changeset)
+    |> Repo.transaction()
+  end
+
+  @doc """
+  Cria um registro de ponto manualmente (Admin) com justificativa.
+  """
+  def admin_create_clock_in(employee_id, attrs, admin_id) do
+    clock_in_attrs = %{
+      "employee_id" => employee_id,
+      "timestamp" => attrs["timestamp"],
+      "type" => attrs["type"],
+      "origin" => attrs["origin"] || :manual,
+      "status" => :valid,
+      "is_edited" => true
+    }
+
+    Multi.new()
+    |> Multi.insert(:clock_in, ClockIn.changeset(%ClockIn{}, clock_in_attrs))
+    |> Multi.run(:adjustment, fn repo, %{clock_in: clock_in} ->
+      adjustment_attrs = %{
+        "clock_in_id" => clock_in.id,
+        "admin_user_id" => admin_id,
+        "justification" => attrs["justification"],
+        "observation" => attrs["observation"],
+        "previous_timestamp" => nil,
+        "previous_type" => nil
+      }
+
+      %ClockInAdjustment{}
+      |> ClockInAdjustment.changeset(adjustment_attrs)
+      |> repo.insert()
+    end)
     |> Repo.transaction()
   end
 

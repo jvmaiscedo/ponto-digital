@@ -241,6 +241,75 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
     """
   end
 
+  @doc """
+  Modal para criação manual de ponto (Administrador).
+  """
+  attr :form, :map, required: true
+
+  def create_modal(assigns) do
+    ~H"""
+    <.modal id="modal-novo-ponto" show on_cancel={JS.push("fechar_modal_criacao")}>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-4">
+        Adicionar Ponto Manualmente
+      </h2>
+      <p class="text-sm text-gray-500 mb-4">
+        Utilize para inserir registros esquecidos.
+      </p>
+
+      <.simple_form for={@form} phx-submit="salvar_novo_ponto">
+        <.input
+          field={@form[:type]}
+          type="select"
+          label="Tipo do Registro"
+          prompt="Selecione..."
+          options={[
+            {"Entrada", :entrada},
+            {"Saída", :saida},
+            {"Ida para Almoço", :ida_almoco},
+            {"Volta do Almoço", :retorno_almoco}
+          ]}
+          required
+        />
+
+        <.input
+          field={@form[:timestamp]}
+          type="datetime-local"
+          label="Data e Hora"
+          required
+        />
+
+        <div class="border-t border-gray-200 dark:border-zinc-700 my-4 pt-4">
+          <p class="text-sm font-medium text-gray-900 dark:text-zinc-100 mb-2">Auditoria</p>
+
+          <.input
+            field={@form[:justification]}
+            type="select"
+            label="Motivo da Inclusão"
+            prompt="Selecione..."
+            options={[
+              {"Esquecimento", :esquecimento},
+              {"Problema Técnico (Relógio)", :problema_tecnico},
+              {"Outros", :outros}
+            ]}
+            required
+          />
+
+          <.input
+            field={@form[:observation]}
+            type="textarea"
+            label="Observação"
+            placeholder="Detalhes sobre a inclusão manual..."
+          />
+        </div>
+
+        <:actions>
+          <.button class="w-full">Criar Registro</.button>
+        </:actions>
+      </.simple_form>
+    </.modal>
+    """
+  end
+
   defp text_align_class("left"), do: "text-left"
   defp text_align_class("center"), do: "text-center"
   defp text_align_class("right"), do: "text-right"

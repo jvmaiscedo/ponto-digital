@@ -8,6 +8,7 @@ defmodule Pontodigital.Company do
   alias Pontodigital.Company.Employee
   alias Ecto.Multi
   alias Pontodigital.Accounts
+  alias Pontodigital.Company.WorkSchedule
 
   def register_employee_with_user(attrs) do
     Multi.new()
@@ -105,7 +106,11 @@ defmodule Pontodigital.Company do
       ** (Ecto.NoResultsError)
 
   """
-  def get_employee!(id), do: Repo.get!(Employee, id)
+  def get_employee!(id) do
+    Employee
+    |> Repo.get!(id)
+    |> Repo.preload(:work_schedule)
+  end
 
   def get_employee_by_user(user_id) do
     Repo.get_by(Employee, user_id: user_id)
@@ -182,5 +187,34 @@ defmodule Pontodigital.Company do
   """
   def change_employee(%Employee{} = employee, attrs \\ %{}) do
     Employee.changeset(employee, attrs)
+  end
+
+  @doc """
+  Retorna a lista de jornadas de trabalho para usar em selects.
+  """
+  def list_work_schedules do
+    Repo.all(WorkSchedule)
+  end
+
+  def get_work_schedule!(id), do: Repo.get!(WorkSchedule, id)
+
+  def create_work_schedule(attrs \\ %{}) do
+    %WorkSchedule{}
+    |> WorkSchedule.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_work_schedule(%WorkSchedule{} = work_schedule, attrs) do
+    work_schedule
+    |> WorkSchedule.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_work_schedule(%WorkSchedule{} = work_schedule) do
+    Repo.delete(work_schedule)
+  end
+
+  def change_work_schedule(%WorkSchedule{} = work_schedule, attrs \\ %{}) do
+    WorkSchedule.changeset(work_schedule, attrs)
   end
 end

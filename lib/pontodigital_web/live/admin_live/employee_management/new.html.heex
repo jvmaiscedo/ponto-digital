@@ -79,6 +79,17 @@
             />
         </div>
         <div>
+          <.input 
+            field={@form[:work_schedule_id]} 
+            type="select" 
+            label="Jornada de Trabalho" 
+            prompt="Selecione uma jornada"
+            options={Enum.map(@work_schedules, &{&1.name, &1.id})}
+            class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
+            required 
+          />
+        </div>
+        <div>
            <.input 
              field={@form[:admission_date]} 
              type="date" 

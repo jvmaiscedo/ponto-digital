@@ -9,7 +9,10 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, editing_clock_in: nil)}
+    {:ok,
+     socket
+     |> assign(editing_clock_in: nil)
+     |> assign(new_point_form: nil)}
   end
 
   @impl true
@@ -59,6 +62,66 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     employee_id = socket.assigns.employee_id
 
     {:noreply, load_timesheet(socket, employee_id, data)}
+  end
+
+  @impl true
+  def handle_event("abrir_novo_ponto", _params, socket) do
+    types = %{
+      type: :string,
+      timestamp: :string,
+      justification: :string,
+      observation: :string
+    }
+
+    changeset =
+      {%{}, types}
+      |> Ecto.Changeset.cast(%{}, Map.keys(types))
+
+    {:noreply, assign(socket, new_point_form: to_form(changeset, as: :new_point))}
+  end
+
+  @impl true
+  def handle_event("fechar_modal_criacao", _params, socket) do
+    {:noreply, assign(socket, new_point_form: nil)}
+  end
+
+  @impl true
+  def handle_event("salvar_novo_ponto", %{"new_point" => params}, socket) do
+    admin_id = socket.assigns.current_scope.user.id
+    employee_id = socket.assigns.employee_id
+
+    # 1. Valida e converte o horário local para UTC
+    case parse_local_to_utc(params["timestamp"]) do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Data e Hora são obrigatórias.")}
+
+      utc_timestamp ->
+        # 2. Prepara os atributos para o Contexto
+        attrs = %{
+          "type" => params["type"],
+          "timestamp" => utc_timestamp,
+          "justification" => params["justification"],
+          "observation" => params["observation"],
+          "origin" => :manual
+        }
+
+        case Timekeeping.admin_create_clock_in(employee_id, attrs, admin_id) do
+          {:ok, _clock_in} ->
+            {:noreply,
+             reload_timesheet_and_close(socket, "Ponto criado manualmente com sucesso.")}
+
+          {:error, _reason} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               "Erro ao criar ponto. Verifique a sequência ou duplicidade."
+             )}
+
+          {:error, _reason, message} ->
+            {:noreply, put_flash(socket, :error, message)}
+        end
+    end
   end
 
   # Private functions
@@ -122,16 +185,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     socket
     |> put_flash(:info, message)
     |> assign(editing_clock_in: nil)
+    |> assign(new_point_form: nil)
     |> load_timesheet(employee_id, date)
   end
 
   defp load_timesheet(socket, employee_id, date) do
     mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
     dias_do_mes = build_month_range(date)
+
     employee = Company.get_employee!(employee_id)
 
-    # Preparar dados dos dias para o template
-    days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos))
+    days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos, employee))
 
     assign(socket,
       days_data: days_data,
@@ -142,7 +206,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     )
   end
 
-  defp prepare_day_data(day, mapa_pontos) do
+  defp prepare_day_data(day, mapa_pontos, employee) do
     pontos_dia = Map.get(mapa_pontos, day, %{})
     is_weekend = weekend?(day)
 
@@ -153,7 +217,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       ida_almoco: pontos_dia[:ida_almoco],
       retorno_almoco: pontos_dia[:retorno_almoco],
       saida: pontos_dia[:saida],
-      saldo: calculate_balance(pontos_dia),
+      saldo: calculate_balance(pontos_dia, employee),
       is_weekend: is_weekend,
       row_class: row_class(is_weekend),
       text_class: text_class(is_weekend)
@@ -197,25 +261,28 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
-  defp calculate_balance(pontos_dia) do
+  defp calculate_balance(pontos_dia, employee) do
     with entrada when not is_nil(entrada) <- pontos_dia[:entrada],
          saida when not is_nil(saida) <- pontos_dia[:saida] do
-      # Extrair timestamps
+      # 1. Calcular tempo trabalhado
       entrada_time = entrada.original.timestamp
       saida_time = saida.original.timestamp
 
-      # Calcular intervalo de almoço
       almoco_minutos = calculate_lunch_break(pontos_dia)
 
-      # Calcular diferença total
       diff_seconds = DateTime.diff(saida_time, entrada_time, :second)
       diff_minutos = div(diff_seconds, 60)
 
-      # Subtrair almoço
       trabalhados_minutos = diff_minutos - almoco_minutos
 
-      # Calcular saldo (considerando 8h = 480 minutos)
-      saldo_minutos = trabalhados_minutos - 480
+      meta_minutos =
+        if employee.work_schedule do
+          employee.work_schedule.daily_hours * 60
+        else
+          480
+        end
+
+      saldo_minutos = trabalhados_minutos - meta_minutos
 
       format_time_balance(saldo_minutos)
     else

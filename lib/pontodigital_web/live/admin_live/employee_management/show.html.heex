@@ -17,6 +17,13 @@
 
     <div class="flex gap-2">
       <button
+        phx-click="abrir_novo_ponto"
+        class="rounded-md bg-zinc-900 dark:bg-zinc-100 px-3 py-2 text-sm font-semibold text-white dark:text-zinc-900 shadow-sm hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+      >
+        + Adicionar Ponto
+      </button>
+
+      <button
         disabled
         class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm opacity-50 cursor-not-allowed"
         title="Funcionalidade em desenvolvimento"
@@ -33,4 +40,9 @@
   :if={@editing_clock_in}
   editing_clock_in={@editing_clock_in}
   form={@form}
+/>
+
+<.create_modal
+  :if={@new_point_form}
+  form={@new_point_form}
 />
