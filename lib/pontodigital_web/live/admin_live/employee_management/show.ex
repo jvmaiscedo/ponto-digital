@@ -192,13 +192,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   defp load_timesheet(socket, employee_id, date) do
     mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
     dias_do_mes = build_month_range(date)
-
     employee = Company.get_employee!(employee_id)
 
     days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos, employee))
 
+    total_minutos = Enum.reduce(days_data, 0, fn day, acc -> acc + day.saldo_minutos end)
+    saldo_total_mes = format_time_balance(total_minutos)
+
     assign(socket,
       days_data: days_data,
+      saldo_total_mes: saldo_total_mes,
+      total_minutos_mes: total_minutos,
       employee_id: employee_id,
       employee: employee,
       employee_name: employee.full_name,
@@ -210,6 +214,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     pontos_dia = Map.get(mapa_pontos, day, %{})
     is_weekend = weekend?(day)
 
+    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee)
+
     %{
       date: day,
       day_of_week: format_weekday(day),
@@ -217,7 +223,10 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       ida_almoco: pontos_dia[:ida_almoco],
       retorno_almoco: pontos_dia[:retorno_almoco],
       saida: pontos_dia[:saida],
-      saldo: calculate_balance(pontos_dia, employee),
+      # Texto para exibir na tabela
+      saldo: saldo_formatado,
+      # Número para somar no total
+      saldo_minutos: saldo_minutos,
       is_weekend: is_weekend,
       row_class: row_class(is_weekend),
       text_class: text_class(is_weekend)
@@ -284,9 +293,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
       saldo_minutos = trabalhados_minutos - meta_minutos
 
-      format_time_balance(saldo_minutos)
+      {saldo_minutos, format_time_balance(saldo_minutos)}
     else
-      _ -> "--:--"
+      _ -> {0, "--:--"}
     end
   end
 

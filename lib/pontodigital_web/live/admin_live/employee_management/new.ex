@@ -4,6 +4,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
   alias Pontodigital.Company
   alias Pontodigital.Company.Employee
 
+  import PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents
+
   @impl true
   def mount(_params, _session, socket) do
     changeset = Company.change_employee(%Employee{})

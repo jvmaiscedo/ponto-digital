@@ -1,115 +1,26 @@
-<div class="mx-auto max-w-2xl">
-  
-  <div class="mb-8 flex justify-between items-start">
-    <.back_button navigate={~p"/admin/"} />
-    <div>
-      <h1 class="text-2xl font-bold text-zinc-100"> Cadastrar Novo Funcionário
-      </h1>
-      <p class="text-sm text-zinc-400">
-        Preencha os dados abaixo para criar o acesso e o perfil profissional.
-</p>
+<div class="mx-auto max-w-4xl">
+  <div class="mb-8 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <.back_button navigate={~p"/admin/"} />
+      
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+          Novo Colaborador
+        </h1>
+        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+          Cadastre as informações contratuais e de acesso ao sistema.
+        </p>
+      </div>
     </div>
-
-    <div class="ml-4">
+    
+    <div class="hidden sm:block">
       <PontodigitalWeb.Layouts.theme_toggle />
     </div>
   </div>
 
-  <div class="bg-zinc-800 p-8 rounded-lg shadow border border-zinc-700">
-    
-    <.form for={@form} phx-change="validate" phx-submit="save" class="space-y-6">
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6"> 
-        <div>
-          <.input 
-            field={@form[:email]} 
-            type="email" 
-            label="Email Corporativo" 
-            phx-debounce="500"
-            class="!bg-white !text-black !border-gray-400 focus:!border-blue-500" 
-            required 
-          />
-        </div>
-        <div>
-          <.input 
-            field={@form[:password]} 
-            type="password" 
-            label="Senha Inicial" 
-            placeholder="Defina uma senha inicial"
-            phx-debounce="500"
-            class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-            required 
-          />
-        </div>
-        
-        <div>
-          <.input 
-            field={@form[:role]} 
-            type="select" 
-            label="Nível de Acesso" 
-            options={[{"Funcionário Comum", "employee"}, {"Administrador", "admin"}]} 
-            class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-            required 
-          />
-        </div>
-      </div>
-
-      <hr class="border-zinc-600 my-6" />
-
-      <div>
-        <.input 
-          field={@form[:full_name]} 
-          type="text" 
-          label="Nome Completo" 
-          phx-debounce="500"
-          class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-          required 
-        />
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-           <.input 
-             field={@form[:position]} 
-             type="text" 
-             label="Cargo" 
-             phx-debounce="500"
-             class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-             required 
-            />
-        </div>
-        <div>
-          <.input 
-            field={@form[:work_schedule_id]} 
-            type="select" 
-            label="Jornada de Trabalho" 
-            prompt="Selecione uma jornada"
-            options={Enum.map(@work_schedules, &{&1.name, &1.id})}
-            class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-            required 
-          />
-        </div>
-        <div>
-           <.input 
-             field={@form[:admission_date]} 
-             type="date" 
-             label="Data de Admissão" 
-             class="!bg-white !text-black !border-gray-400 focus:!border-blue-500"
-             required 
-            />
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end gap-3 mt-8">
-        <.link navigate={~p"/admin/"} class="text-sm font-semibold text-zinc-400 hover:text-white">
-          Cancelar
-        </.link>
-        
-        <button class="rounded-lg bg-blue-600 hover:bg-blue-500 py-2 px-4 text-sm font-semibold text-white shadow-sm">
-          Salvar Funcionário
-        </button>
-      </div>
-
-    </.form>
-  </div>
+  <.employee_registration_form 
+    form={@form} 
+    work_schedules={@work_schedules}
+    action={~p"/admin/"} 
+  />
 </div>

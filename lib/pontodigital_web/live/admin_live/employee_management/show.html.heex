@@ -12,7 +12,7 @@
         </p>
       </div>
     </div>
-
+    
     <.period_filter mes_selecionado={@mes_selecionado} />
 
     <div class="flex gap-2">
@@ -33,6 +33,15 @@
     </div>
   </div>
 
+  <div class="mb-6 p-4 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-gray-200 dark:border-zinc-700 flex items-center justify-between">
+    <div>
+      <h3 class="text-sm font-medium text-gray-500 dark:text-zinc-400">Saldo Total do Mês</h3>
+      <p class="text-xs text-gray-400 mt-1">Cálculo baseado na jornada prevista</p>
+    </div>
+    <div class={"text-3xl font-bold tracking-tight " <> if(@total_minutos_mes >= 0, do: "text-emerald-600", else: "text-red-600")}>
+      <%= @saldo_total_mes %>
+    </div>
+  </div>
   <.timesheet_table days_data={@days_data} />
 </div>
 

@@ -88,6 +88,150 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
+  @doc """
+  Formulário completo de cadastro de funcionário.
+  """
+  attr :form, :map, required: true
+  attr :work_schedules, :list, default: []
+
+  attr :action, :string, default: "/admin/"
+
+  def employee_registration_form(assigns) do
+    ~H"""
+    <div class="overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10">
+      <.form
+        for={@form}
+        phx-change="validate"
+        phx-submit="save"
+        class="divide-y divide-gray-200 dark:divide-zinc-700"
+      >
+        <div class="grid grid-cols-1 gap-x-8 gap-y-8 p-8 md:grid-cols-3">
+          <div class="md:col-span-1">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 dark:text-white">
+              Acesso ao Sistema
+            </h2>
+            <p class="mt-1 text-sm leading-6 text-gray-500 dark:text-zinc-400">
+              Defina como este usuário fará login no Ponto Digital.
+            </p>
+          </div>
+
+          <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6 md:col-span-2">
+            <div class="sm:col-span-4">
+              <.input
+                field={@form[:email]}
+                type="email"
+                label="E-mail Corporativo"
+                placeholder="nome@empresa.com"
+                phx-debounce="500"
+                class="block w-full rounded-md border-0 bg-transparent py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-zinc-700 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <.input
+                field={@form[:password]}
+                type="password"
+                label="Senha Inicial"
+                placeholder="••••••••"
+                phx-debounce="500"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <.input
+                field={@form[:role]}
+                type="select"
+                label="Perfil de Acesso"
+                options={[{"Funcionário", "employee"}, {"Administrador", "admin"}]}
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-x-8 gap-y-8 p-8 md:grid-cols-3 bg-gray-50/50 dark:bg-zinc-800/50">
+          <div class="md:col-span-1">
+            <h2 class="text-base font-semibold leading-7 text-gray-900 dark:text-white">
+              Dados Contratuais
+            </h2>
+            <p class="mt-1 text-sm leading-6 text-gray-500 dark:text-zinc-400">
+              Informações para o espelho de ponto e relatórios.
+            </p>
+          </div>
+
+          <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6 md:col-span-2">
+            <div class="sm:col-span-6">
+              <.input
+                field={@form[:full_name]}
+                type="text"
+                label="Nome Completo"
+                placeholder="Ex: João da Silva"
+                phx-debounce="500"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <.input
+                field={@form[:position]}
+                type="text"
+                label="Cargo"
+                placeholder="Ex: Desenvolvedor"
+                phx-debounce="500"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <.input
+                field={@form[:admission_date]}
+                type="date"
+                label="Data de Admissão"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-6">
+              <div class="relative">
+                <.input
+                  field={@form[:work_schedule_id]}
+                  type="select"
+                  label="Jornada de Trabalho"
+                  prompt="Selecione a jornada..."
+                  options={Enum.map(@work_schedules, &{&1.name, &1.id})}
+                  required
+                />
+                <p class="mt-1 text-xs text-gray-500 dark:text-zinc-500">
+                  Isso definirá o cálculo de horas extras e atrasos.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 dark:border-white/10 px-4 py-4 sm:px-8 bg-gray-50 dark:bg-zinc-900/50">
+          <.link
+            navigate={@action}
+            class="text-sm font-semibold leading-6 text-gray-900 dark:text-zinc-300 hover:text-zinc-100"
+          >
+            Cancelar
+          </.link>
+          <button
+            type="submit"
+            class="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
+          >
+            Salvar Cadastro
+          </button>
+        </div>
+      </.form>
+    </div>
+    """
+  end
+
+  # --- HELPERS (MANTIDOS) ---
+
   defp table_header(assigns) do
     ~H"""
     <th
@@ -148,7 +292,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
-  # Helpers de estilo (Movidos do Index.ex)
   defp status_class(status) when status in [:inativo, "inativo"] do
     "bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-400/20"
   end
