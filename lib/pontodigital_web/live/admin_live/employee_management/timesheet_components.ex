@@ -209,7 +209,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
           field={@form[:timestamp]}
           type="datetime-local"
           label="Novo Horário"
-          required
         />
 
         <.input

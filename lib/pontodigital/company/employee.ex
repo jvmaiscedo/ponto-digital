@@ -8,6 +8,7 @@ defmodule Pontodigital.Company.Employee do
     field :admission_date, :date
 
     belongs_to :user, Pontodigital.Accounts.User
+    belongs_to :work_schedule, Pontodigital.Company.WorkSchedule
     has_many :clock_ins, Pontodigital.Timekeeping.ClockIn
 
     field :email, :string, virtual: true
@@ -21,14 +22,25 @@ defmodule Pontodigital.Company.Employee do
   @doc false
   def changeset(employee, attrs) do
     employee
-    |> cast(attrs, [:full_name, :position, :admission_date, :user_id, :email, :password, :role])
+    |> cast(attrs, [
+      :full_name,
+      :position,
+      :admission_date,
+      :user_id,
+      :email,
+      :password,
+      :role,
+      :work_schedule_id
+    ])
     |> validate_required([:full_name, :position, :admission_date, :email, :password, :role])
+    |> foreign_key_constraint(:work_schedule_id)
   end
 
   def admin_update_changeset(employee, attrs) do
     employee
-    |> cast(attrs, [:full_name, :position, :admission_date]) # Liste apenas o que pode mudar
+    |> cast(attrs, [:full_name, :position, :admission_date, :work_schedule_id])
     |> validate_required([:full_name, :position])
+
     # Sem validação de senha ou email aqui!
   end
 end
