@@ -8,7 +8,8 @@ defmodule PontodigitalWeb.UserAuth do
   alias Pontodigital.Accounts.Scope
   # alias Pontodigital.Company
 
-  # Make the remember me cookie valid for 14 days. This should match
+  # Make the remember me cookie valid for 14 days.
+  # This should match
   # the session validity setting in UserToken.
   @max_cookie_age_in_days 14
   @remember_me_cookie "_pontodigital_web_user_remember_me"
@@ -18,12 +19,15 @@ defmodule PontodigitalWeb.UserAuth do
     same_site: "Lax"
   ]
 
-  # How old the session token should be before a new one is issued. When a request is made
+  # How old the session token should be before a new one is issued.
+  # When a request is made
   # with a session token older than this value, then a new session token will be created
   # and the session and remember-me cookies (if set) will be updated with the new token.
-  # Lowering this value will result in more tokens being created by active users. Increasing
+  # Lowering this value will result in more tokens being created by active users.
+  # Increasing
   # it will result in less time before a session token expires for a user to get issued a new
-  # token. This can be set to a value greater than `@max_cookie_age_in_days` to disable
+  # token.
+  # This can be set to a value greater than `@max_cookie_age_in_days` to disable
   # the reissuing of tokens completely.
   @session_reissue_age_in_days 7
 
@@ -34,10 +38,10 @@ defmodule PontodigitalWeb.UserAuth do
   or falls back to the `signed_in_path/1`.
   """
   def log_in_user(conn, user, params \\ %{}) do
-
     case user.status do
       true ->
         user_return_to = get_session(conn, :user_return_to)
+
         conn
         |> create_or_extend_session(user, params)
         |> redirect(to: user_return_to || signed_in_path(user))
@@ -71,7 +75,6 @@ defmodule PontodigitalWeb.UserAuth do
 
   @doc """
   Authenticates the user by looking into the session and remember me token.
-
   Will reissue the session token if it is older than the configured age.
   """
   def fetch_current_scope_for_user(conn, _opts) do
@@ -89,7 +92,8 @@ defmodule PontodigitalWeb.UserAuth do
     if token = get_session(conn, :user_token) do
       {token, conn}
     else
-      conn = fetch_cookies(conn, signed: [@remember_me_cookie])
+      conn =
+        fetch_cookies(conn, signed: [@remember_me_cookie])
 
       if token = conn.cookies[@remember_me_cookie] do
         {token, conn |> put_token_in_session(token) |> put_session(:user_remember_me, true)}
@@ -111,12 +115,14 @@ defmodule PontodigitalWeb.UserAuth do
   end
 
   # This function is the one responsible for creating session tokens
-  # and storing them safely in the session and cookies. It may be called
+  # and storing them safely in the session and cookies.
+  # It may be called
   # either when logging in, during sudo mode, or to renew a session which
   # will soon expire.
   #
   # When the session is created, rather than extended, the renew_session
-  # function will clear the session to avoid fixation attacks. See the
+  # function will clear the session to avoid fixation attacks.
+  # See the
   # renew_session function to customize this behaviour.
   defp create_or_extend_session(conn, user, params) do
     token = Accounts.generate_user_session_token(user)
@@ -135,7 +141,8 @@ defmodule PontodigitalWeb.UserAuth do
   end
 
   # This function renews the session ID and erases the whole
-  # session to avoid fixation attacks. If there is any data
+  # session
+  # to avoid fixation attacks. If there is any data
   # in the session you may want to preserve after log in/log out,
   # you must explicitly fetch the session data before clearing
   # and then immediately set it after clearing, for example:
@@ -191,13 +198,11 @@ defmodule PontodigitalWeb.UserAuth do
 
   @doc """
   Handles mounting and authenticating the current_scope in LiveViews.
-
   ## `on_mount` arguments
 
     * `:mount_current_scope` - Assigns current_scope
       to socket assigns based on user_token, or nil if
       there's no user_token or no matching user.
-
     * `:require_authenticated` - Authenticates the user from the session,
       and assigns the current_scope to socket assigns based
       on user_token.
@@ -218,7 +223,8 @@ defmodule PontodigitalWeb.UserAuth do
   Or use the `live_session` of your router to invoke the on_mount callback:
 
       live_session :authenticated, on_mount: [{PontodigitalWeb.UserAuth, :require_authenticated}] do
-        live "/profile", ProfileLive, :index
+        live
+  "/profile", ProfileLive, :index
       end
   """
   def on_mount(:mount_current_scope, _params, session, socket) do
@@ -235,6 +241,21 @@ defmodule PontodigitalWeb.UserAuth do
         socket
         |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
         |> Phoenix.LiveView.redirect(to: ~p"/users/log-in")
+
+      {:halt, socket}
+    end
+  end
+
+  def on_mount(:ensure_admin, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    if socket.assigns.current_scope.user && socket.assigns.current_scope.user.role == :admin do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "Acesso não autorizado.")
+        |> Phoenix.LiveView.redirect(to: ~p"/")
 
       {:halt, socket}
     end
@@ -260,7 +281,8 @@ defmodule PontodigitalWeb.UserAuth do
       {user, _} =
         if user_token = session["user_token"] do
           Accounts.get_user_by_session_token(user_token)
-        end || {nil, nil}
+        end ||
+          {nil, nil}
 
       Scope.for_user(user)
     end)
@@ -292,6 +314,7 @@ defmodule PontodigitalWeb.UserAuth do
   end
 
   @doc """
+
   Plug para garantir que o usuário logado tem um perfil de funcionário (Employee).
   """
   def require_employee(conn, _opts) do

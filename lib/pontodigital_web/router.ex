@@ -1,5 +1,4 @@
 defmodule PontodigitalWeb.Router do
-
   use PontodigitalWeb, :router
 
   import PontodigitalWeb.UserAuth
@@ -52,7 +51,10 @@ defmodule PontodigitalWeb.Router do
     pipe_through :admin_access
 
     live_session :admin_dashboard,
-      on_mount: [{PontodigitalWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [
+        {PontodigitalWeb.UserAuth, :mount_current_scope},
+        {PontodigitalWeb.UserAuth, :ensure_admin}
+      ] do
       live "/", AdminLive.Index, :index
       live "/funcionarios", AdminLive.EmployeeManagement.Index, :index
       live "/funcionarios/:id", AdminLive.EmployeeManagement.Show, :show

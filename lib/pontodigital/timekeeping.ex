@@ -76,12 +76,98 @@ defmodule Pontodigital.Timekeeping do
   end
 
   def get_last_clock_in_by_employee(%Employee{} = employee) do
+    get_last_clock_in_by_employee_id(employee.id)
+  end
+
+  def get_last_clock_in_by_employee_id(employee_id) do
     ClockIn
-    |> where(employee_id: ^employee.id)
+    |> where(employee_id: ^employee_id)
+    |> where([c], c.status == :valid)
     |> order_by(desc: :timestamp)
     |> limit(1)
     |> Repo.one()
   end
+
+  def register_clock_in(employee_id, type) do
+    Repo.transaction(fn ->
+      with {:ok, _} <- validate_no_duplicates(employee_id, type),
+           last_clock <- get_last_clock_in_by_employee_id(employee_id),
+           :ok <- validate_sequence(last_clock, type),
+           attrs <- build_attrs(employee_id, type),
+           {:ok, clock_in} <- create_clock_in(attrs) do
+        clock_in
+      else
+        {:error, reason} when is_atom(reason) ->
+          Repo.rollback(reason)
+
+        {:error, reason, message} ->
+          Repo.rollback({reason, message})
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+    |> case do
+      {:ok, clock_in} ->
+        {:ok, clock_in}
+
+      {:error, {reason, message}} when is_atom(reason) ->
+        {:error, reason, message}
+
+      {:error, reason} when is_atom(reason) ->
+        {:error, reason}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp validate_no_duplicates(employee_id, type) do
+    # Verificar se já existe registro deste tipo hoje
+    today = Date.utc_today()
+
+    query =
+      from c in ClockIn,
+        where: c.employee_id == ^employee_id,
+        where: fragment("DATE(?)", c.timestamp) == ^today,
+        where: c.type == ^type,
+        where: c.status != :invalid
+
+    case Repo.exists?(query) do
+      false -> {:ok, :no_duplicates}
+      true -> {:error, :duplicate_entry}
+    end
+  end
+
+  defp build_attrs(employee_id, type) do
+    %{
+      employee_id: employee_id,
+      timestamp: DateTime.utc_now(),
+      type: type,
+      origin: :web,
+      status: :valid
+    }
+  end
+
+  defp validate_sequence(nil, :entrada), do: :ok
+  defp validate_sequence(%{type: :entrada}, type) when type in [:saida, :ida_almoco], do: :ok
+  defp validate_sequence(%{type: :ida_almoco}, :retorno_almoco), do: :ok
+  defp validate_sequence(%{type: :retorno_almoco}, :saida), do: :ok
+  defp validate_sequence(%{type: :saida}, :entrada), do: :ok
+
+  defp validate_sequence(%{type: last_type}, _new_type) do
+    message = "Sequência inválida! Último registro: #{format_type(last_type)}"
+    {:error, :invalid_sequence, message}
+  end
+
+  defp validate_sequence(nil, _type) do
+    {:error, :invalid_sequence, "Você deve fazer uma entrada primeiro."}
+  end
+
+  defp format_type(:entrada), do: "Entrada"
+  defp format_type(:saida), do: "Saída"
+  defp format_type(:ida_almoco), do: "Ida para Almoço"
+  defp format_type(:retorno_almoco), do: "Retorno do Almoço"
 
   def list_timesheet(employee_id, year, month, timezone \\ "America/Sao_Paulo") do
     start_date = Date.new!(year, month, 1)
@@ -135,7 +221,6 @@ defmodule Pontodigital.Timekeeping do
 
   @doc """
   Gets a single clock_in.
-
   Raises `Ecto.NoResultsError` if the Clock in does not exist.
 
   ## Examples

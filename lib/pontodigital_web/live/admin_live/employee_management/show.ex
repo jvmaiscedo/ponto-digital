@@ -41,41 +41,15 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     clock_in = socket.assigns.editing_clock_in
     admin_id = socket.assigns.current_scope.user.id
 
-    observation = params["observation"]
-
     case params["type"] do
       "invalidado" ->
-        case Timekeeping.invalidate_clock_in(
-               clock_in,
-               params["justification"],
-               observation,
-               admin_id
-             ) do
-          {:ok, _} ->
-            {:noreply, reload_timesheet_and_close(socket, "Registro invalidado com sucesso.")}
+        handle_invalidation(socket, clock_in, params, admin_id)
 
-          {:error, _op, changeset, _} ->
-            {:noreply, assign(socket, form: to_form(changeset))}
-        end
+      type when type in ["entrada", "saida", "ida_almoco", "retorno_almoco"] ->
+        handle_update(socket, clock_in, params, admin_id, type)
 
-      _outro_tipo ->
-        # Fluxo de edição (Mudança de horário/tipo)
-        utc_timestamp = parse_local_to_utc(params["novo_horario"])
-
-        attrs = %{
-          "timestamp" => utc_timestamp,
-          "justification" => params["justification"],
-          "observation" => observation,
-          "type" => params["type"]
-        }
-
-        case Timekeeping.admin_update_clock_in(clock_in, attrs, admin_id) do
-          {:ok, _} ->
-            {:noreply, reload_timesheet_and_close(socket, "Ponto corrigido com sucesso.")}
-
-          {:error, _op, changeset, _} ->
-            {:noreply, assign(socket, form: to_form(changeset))}
-        end
+      _ ->
+        {:noreply, put_flash(socket, :error, "Tipo inválido.")}
     end
   end
 
@@ -88,6 +62,58 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   # Private functions
+
+  defp handle_invalidation(socket, clock_in, params, admin_id) do
+    case Timekeeping.invalidate_clock_in(
+           clock_in,
+           params["justification"],
+           params["observation"],
+           admin_id
+         ) do
+      {:ok, _} ->
+        {:noreply, reload_timesheet_and_close(socket, "Registro invalidado.")}
+
+      {:error, _op, changeset, _} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+
+  defp handle_update(socket, clock_in, params, admin_id, type) do
+    with {:ok, utc_timestamp} <- parse_and_validate_timestamp(params["novo_horario"]),
+         {:ok, justification} <- validate_justification(params["justification"]) do
+      attrs = %{
+        "timestamp" => utc_timestamp,
+        "justification" => justification,
+        "observation" => params["observation"],
+        "type" => String.to_existing_atom(type)
+      }
+
+      case Timekeeping.admin_update_clock_in(clock_in, attrs, admin_id) do
+        {:ok, _} ->
+          {:noreply, reload_timesheet_and_close(socket, "Ponto corrigido.")}
+
+        {:error, _op, changeset, _} ->
+          {:noreply, assign(socket, form: to_form(changeset))}
+      end
+    else
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  defp parse_and_validate_timestamp(""), do: {:error, "Horário é obrigatório."}
+  defp parse_and_validate_timestamp(nil), do: {:error, "Horário é obrigatório."}
+
+  defp parse_and_validate_timestamp(datetime_string) do
+    case parse_local_to_utc(datetime_string) do
+      nil -> {:error, "Formato de horário inválido."}
+      timestamp -> {:ok, timestamp}
+    end
+  end
+
+  defp validate_justification(""), do: {:error, "Justificativa é obrigatória."}
+  defp validate_justification(nil), do: {:error, "Justificativa é obrigatória."}
+  defp validate_justification(just), do: {:ok, just}
 
   defp reload_timesheet_and_close(socket, message) do
     employee_id = socket.assigns.employee_id
@@ -235,7 +261,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
   defp parse_local_to_utc(local_datetime_string) do
     # O input datetime-local muitas vezes vem sem segundos (ex: "2023-10-25T14:00")
-    # O Elixir exige segundos. Se a string for curta (16 chars), adicionamos ":00".
+    # O Elixir exige segundos.
+    # Se a string for curta (16 chars), adicionamos ":00".
     clean_string =
       if String.length(local_datetime_string) == 16 do
         local_datetime_string <> ":00"

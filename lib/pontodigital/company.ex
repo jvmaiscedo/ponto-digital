@@ -8,7 +8,6 @@ defmodule Pontodigital.Company do
   alias Pontodigital.Company.Employee
   alias Ecto.Multi
   alias Pontodigital.Accounts
-  alias Pontodigital.Timekeeping
 
   def register_employee_with_user(attrs) do
     Multi.new()
@@ -36,42 +35,51 @@ defmodule Pontodigital.Company do
     Repo.all(Employee)
   end
 
- def list_employees_with_details(search_term \\ "") do
+  def list_employees_with_details(search_term \\ "") do
+    # Subquery para pegar o último clock_in de cada funcionário
+    last_clock_query =
+      from c in Pontodigital.Timekeeping.ClockIn,
+        distinct: [asc: :employee_id],
+        order_by: [asc: :employee_id, desc: :timestamp],
+        select: %{employee_id: c.employee_id, type: c.type}
+
     query =
       from e in Employee,
-      join: u in assoc(e, :user),
-      order_by: [asc: e.full_name]
+        join: u in assoc(e, :user),
+        left_join: last_clock in subquery(last_clock_query),
+        on: last_clock.employee_id == e.id,
+        order_by: [asc: e.full_name],
+        select: %{
+          employee: e,
+          last_clock_type: last_clock.type
+        }
 
     query =
       if search_term != "" do
         term = "%#{search_term}%"
-        where(query, [e, u], ilike(e.full_name, ^term) or ilike(u.email, ^term))
+        where(query, [e, u, _lc], ilike(e.full_name, ^term) or ilike(u.email, ^term))
       else
         query
       end
 
-    user_preload_query = from u in Pontodigital.Accounts.User,
-      select: [:id, :email, :role]
+    user_preload_query =
+      from u in Pontodigital.Accounts.User,
+        select: [:id, :email, :role]
 
     query
     |> Repo.all()
-    |> Repo.preload(user: user_preload_query)
-    |> populate_status()
-  end
+    |> Enum.map(fn %{employee: emp, last_clock_type: type} ->
+      status = derive_status(type)
 
-  defp populate_status(employees) do
-    Enum.map(employees, fn emp ->
-      last_point = Timekeeping.get_last_clock_in_by_employee(emp)
-      status = case last_point do
-        %{type: :entrada} -> :ativo
-        %{type: :retorno_almoco} -> :ativo
-        %{type: :ida_almoco} -> :almoco
-        _ -> :inativo
-      end
-
-      %{emp | status: status}
+      emp
+      |> Repo.preload(user: user_preload_query)
+      |> Map.put(:status, status)
     end)
   end
+
+  defp derive_status(type) when type in [:entrada, :retorno_almoco], do: :ativo
+  defp derive_status(:ida_almoco), do: :almoco
+  defp derive_status(_), do: :inativo
 
   def change_employee_for_admin(employee, attrs \\ %{}) do
     Employee.admin_update_changeset(employee, attrs)

@@ -3,8 +3,10 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   alias Pontodigital.Company
   alias Pontodigital.Accounts
 
+  # Importa os componentes novos
+  import PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents
+
   @impl true
-  @spec mount(any(), any(), any()) :: {:ok, any()}
   def mount(_params, _session, socket) do
     employees = Company.list_employees_with_details("")
 
@@ -54,18 +56,5 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
     socket
     |> assign(:page_title, "Listagem de Funcionários")
     |> assign(:employee, nil)
-  end
-
-  # funções auxiliares para modificar a cor do status
-  defp status_class(status) when status in [:inativo, "inativo"] do
-    "bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-400/20"
-  end
-
-  defp status_class(status) when status in [:almoco, "almoco"] do
-    "bg-yellow-50 text-yellow-800 ring-yellow-600/10 dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-400/20"
-  end
-
-  defp status_class(_status) do
-    "bg-green-50 text-green-700 ring-green-600/10 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-400/20"
   end
 end
