@@ -125,9 +125,48 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
       </td>
       
     <!-- Ações -->
-      <td class="px-4 py-2 whitespace-nowrap text-right">
-        <div class="inline-flex">
-          <!-- Placeholder para futuras ações -->
+      <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+        <div class="flex items-center justify-end gap-2">
+          <%= if @day_data.abono do %>
+            <span
+              class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/30 cursor-help"
+              title={@day_data.abono.reason}
+            >
+              <.icon name="hero-check-circle-mini" class="size-3" /> Abonado
+            </span>
+
+            <button
+              phx-click="remover_abono"
+              phx-value-id={@day_data.abono.id}
+              data-confirm="Tem certeza que deseja cancelar este abono? A falta voltará a ser cobrada."
+              class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
+              aria-label="Remover Abono"
+              title="Cancelar Abono"
+            >
+              <.icon name="hero-trash" class="size-4" />
+            </button>
+          <% else %>
+            <%= if @day_data.saldo_minutos < 0 do %>
+              <button
+                phx-click="abrir_abono"
+                phx-value-date={@day_data.date}
+                class="group flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 hover:bg-yellow-100 transition-all dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-500/30 dark:hover:bg-yellow-900/50"
+              >
+                <.icon
+                  name="hero-scale"
+                  class="size-3 text-yellow-600 dark:text-yellow-500 group-hover:text-yellow-800"
+                /> Justificar
+              </button>
+            <% else %>
+              <button
+                phx-click="abrir_novo_ponto"
+                class="text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                title="Adicionar Ponto Manual"
+              >
+                <.icon name="hero-plus-circle" class="size-5" />
+              </button>
+            <% end %>
+          <% end %>
         </div>
       </td>
     </tr>
@@ -304,6 +343,86 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
 
         <:actions>
           <.button class="w-full">Criar Registro</.button>
+        </:actions>
+      </.simple_form>
+    </.modal>
+    """
+  end
+
+  @doc """
+  Modal para abonar uma falta.
+  """
+  attr :form, :map, required: true
+  attr :date, Date, required: true
+
+  def absence_modal(assigns) do
+    ~H"""
+    <.modal id="modal-abono" show on_cancel={JS.push("fechar_modal_abono")}>
+      <div class="flex items-start gap-4 mb-6">
+        <div class="flex-none p-2 rounded-full bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500">
+          <.icon name="hero-clipboard-document-check" class="size-6" />
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-zinc-100">
+            Justificar Ausência
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+            Você está abonando a falta do dia:
+          </p>
+          <div class="mt-2 inline-flex items-center px-3 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
+            <.icon name="hero-calendar" class="size-4 text-gray-500 mr-2" />
+            <span class="font-mono font-bold text-gray-900 dark:text-zinc-200">
+              {Calendar.strftime(@date, "%d/%m/%Y")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <.simple_form for={@form} phx-submit="salvar_abono" class="space-y-6">
+        <.input field={@form[:date]} type="hidden" value={@date} />
+
+        <div class="bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-gray-200 dark:border-zinc-700 space-y-4">
+          <.input
+            field={@form[:reason]}
+            type="select"
+            label="Motivo Legal"
+            prompt="Selecione o motivo..."
+            options={[
+              {"Atestado Médico", "atestado_medico"},
+              {"Folga Compensatória", "folga_banco"},
+              {"Feriado Local", "feriado_local"},
+              {"Licença Remunerada (Luto/Gala)", "licenca"},
+              {"Outros", "outros"}
+            ]}
+            required
+            class="!bg-white dark:!bg-zinc-900"
+          />
+
+          <.input
+            field={@form[:observation]}
+            type="textarea"
+            label="Detalhamento / CID"
+            placeholder="Descreva detalhes adicionais para auditoria..."
+            class="min-h-[80px] !bg-white dark:!bg-zinc-900"
+          />
+        </div>
+
+        <:actions>
+          <div class="flex w-full gap-3">
+            <button
+              type="button"
+              phx-click={JS.push("fechar_modal_abono")}
+              class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Confirmar Abono
+            </button>
+          </div>
         </:actions>
       </.simple_form>
     </.modal>

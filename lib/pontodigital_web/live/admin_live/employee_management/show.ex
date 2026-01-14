@@ -12,7 +12,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     {:ok,
      socket
      |> assign(editing_clock_in: nil)
-     |> assign(new_point_form: nil)}
+     |> assign(new_point_form: nil)
+     |> assign(absence_form: nil)
+     |> assign(absence_date: nil)}
   end
 
   @impl true
@@ -25,7 +27,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   def handle_event("alterar_ponto", %{"id" => id}, socket) do
     ponto = Timekeeping.get_clock_in!(id)
     changeset = Timekeeping.change_adjustment(%ClockInAdjustment{})
-    IO.inspect(ponto)
 
     {:noreply,
      assign(socket,
@@ -90,13 +91,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     admin_id = socket.assigns.current_scope.user.id
     employee_id = socket.assigns.employee_id
 
-    # 1. Valida e converte o horário local para UTC
     case parse_local_to_utc(params["timestamp"]) do
       nil ->
         {:noreply, put_flash(socket, :error, "Data e Hora são obrigatórias.")}
 
       utc_timestamp ->
-        # 2. Prepara os atributos para o Contexto
         attrs = %{
           "type" => params["type"],
           "timestamp" => utc_timestamp,
@@ -111,12 +110,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
              reload_timesheet_and_close(socket, "Ponto criado manualmente com sucesso.")}
 
           {:error, _reason} ->
-            {:noreply,
-             put_flash(
-               socket,
-               :error,
-               "Erro ao criar ponto. Verifique a sequência ou duplicidade."
-             )}
+            {:noreply, put_flash(socket, :error, "Erro ao criar ponto. Verifique a sequência.")}
 
           {:error, _reason, message} ->
             {:noreply, put_flash(socket, :error, message)}
@@ -124,7 +118,53 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
-  # Private functions
+  @impl true
+  def handle_event("abrir_abono", %{"date" => date_str}, socket) do
+    # Changeset schemaless para o formulário
+    types = %{date: :date, reason: :string, observation: :string}
+    changeset = {%{}, types} |> Ecto.Changeset.cast(%{}, Map.keys(types))
+
+    {:noreply,
+     socket
+     |> assign(absence_date: Date.from_iso8601!(date_str))
+     |> assign(absence_form: to_form(changeset, as: :absence))}
+  end
+
+  @impl true
+  def handle_event("fechar_modal_abono", _params, socket) do
+    {:noreply, assign(socket, absence_form: nil, absence_date: nil)}
+  end
+
+  @impl true
+  def handle_event("salvar_abono", %{"absence" => params}, socket) do
+    admin_id = socket.assigns.current_scope.user.id
+    employee_id = socket.assigns.employee_id
+
+    attrs = %{
+      # Usamos a data do assign por segurança
+      "date" => socket.assigns.absence_date,
+      "reason" => params["reason"],
+      "observation" => params["observation"],
+      "employee_id" => employee_id,
+      "admin_user_id" => admin_id
+    }
+
+    case Timekeeping.create_absence(attrs) do
+      {:ok, _absence} ->
+        {:noreply, reload_timesheet_and_close_absence(socket, "Falta abonada com sucesso.")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, absence_form: to_form(changeset, as: :absence))}
+    end
+  end
+
+  @impl true
+  def handle_event("remover_abono", %{"id" => id}, socket) do
+    absence = Timekeeping.get_absence!(id)
+    {:ok, _} = Timekeeping.delete_absence(absence)
+
+    {:noreply, reload_timesheet_and_close_absence(socket, "Abono removido.")}
+  end
 
   defp handle_invalidation(socket, clock_in, params, admin_id) do
     case Timekeeping.invalidate_clock_in(
@@ -192,9 +232,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   defp load_timesheet(socket, employee_id, date) do
     mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
     dias_do_mes = build_month_range(date)
+    primeiro_dia = dias_do_mes.first
+    ultimo_dia = dias_do_mes.last
+
+    mapa_abonos = Timekeeping.list_absences_map(employee_id, primeiro_dia, ultimo_dia)
     employee = Company.get_employee!(employee_id)
 
-    days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos, employee))
+    days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos, mapa_abonos, employee))
 
     total_minutos = Enum.reduce(days_data, 0, fn day, acc -> acc + day.saldo_minutos end)
     saldo_total_mes = format_time_balance(total_minutos)
@@ -210,11 +254,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     )
   end
 
-  defp prepare_day_data(day, mapa_pontos, employee) do
+  defp prepare_day_data(day, mapa_pontos, mapa_abonos, employee) do
     pontos_dia = Map.get(mapa_pontos, day, %{})
+    abono = Map.get(mapa_abonos, day)
     is_weekend = weekend?(day)
 
-    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee, day)
+    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee, day, abono)
 
     %{
       date: day,
@@ -223,14 +268,83 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       ida_almoco: pontos_dia[:ida_almoco],
       retorno_almoco: pontos_dia[:retorno_almoco],
       saida: pontos_dia[:saida],
-      # Texto para exibir na tabela
+      abono: abono,
       saldo: saldo_formatado,
-      # Número para somar no total
       saldo_minutos: saldo_minutos,
       is_weekend: is_weekend,
       row_class: row_class(is_weekend),
       text_class: text_class(is_weekend)
     }
+  end
+
+  defp calculate_balance(_points, _employee, _date, %Pontodigital.Timekeeping.Absence{}) do
+    {0, "ABONADO"}
+  end
+
+  defp calculate_balance(points, employee, date, nil) do
+    meta = get_daily_meta(employee)
+
+    case calculate_worked_minutes(points) do
+      {:ok, trabalhados} ->
+        saldo = trabalhados - meta
+        {saldo, format_time_balance(saldo)}
+
+      :error ->
+        check_penalty(employee, date, meta)
+    end
+  end
+
+  defp get_daily_meta(%{work_schedule: %{daily_hours: hours}}), do: hours * 60
+  defp get_daily_meta(_employee), do: 480
+
+  defp calculate_worked_minutes(%{entrada: ent, saida: sai} = points)
+       when not is_nil(ent) and not is_nil(sai) do
+    entrada_time = ent.original.timestamp
+    saida_time = sai.original.timestamp
+    almoco = calculate_lunch_break(points)
+
+    diff_seconds = DateTime.diff(saida_time, entrada_time, :second)
+    {:ok, div(diff_seconds, 60) - almoco}
+  end
+
+  defp calculate_worked_minutes(_points), do: :error
+
+  defp check_penalty(employee, date, meta) do
+    if should_charge_absence?(employee, date) do
+      debito = -meta
+      {debito, format_time_balance(debito)}
+    else
+      {0, "--:--"}
+    end
+  end
+
+  defp should_charge_absence?(employee, date) do
+    working_day? = is_working_day?(employee, date)
+    hired? = Date.compare(date, employee.admission_date) != :lt
+    past_or_today? = Date.compare(date, Date.utc_today()) != :gt
+
+    working_day? and hired? and past_or_today?
+  end
+
+  defp is_working_day?(%{work_schedule: %{work_days: days}}, date) do
+    Date.day_of_week(date) in days
+  end
+
+  defp is_working_day?(_employee, date) do
+    not weekend?(date)
+  end
+
+  defp calculate_lunch_break(pontos_dia) do
+    with ida when not is_nil(ida) <- pontos_dia[:ida_almoco],
+         retorno when not is_nil(retorno) <- pontos_dia[:retorno_almoco] do
+      ida_time = ida.original.timestamp
+      retorno_time = retorno.original.timestamp
+
+      diff_seconds = DateTime.diff(retorno_time, ida_time, :second)
+      div(diff_seconds, 60)
+    else
+      _ -> 0
+    end
   end
 
   defp build_month_range(date) do
@@ -246,87 +360,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
-  defp format_month_input(date) do
-    Calendar.strftime(date, "%Y-%m")
-  end
-
-  defp weekend?(date) do
-    Date.day_of_week(date) in [6, 7]
-  end
-
-  defp row_class(is_weekend) do
-    if is_weekend do
-      "bg-gray-50 dark:bg-zinc-800/50"
-    else
-      "hover:bg-gray-50 dark:hover:bg-zinc-700/50"
-    end
-  end
-
-  defp text_class(is_weekend) do
-    if is_weekend do
-      "text-gray-400 dark:text-zinc-500"
-    else
-      "text-gray-900 dark:text-zinc-100"
-    end
-  end
-
-  defp calculate_balance(pontos_dia, employee, date) do
-    meta_minutos =
-      if employee.work_schedule do
-        employee.work_schedule.daily_hours * 60
-      else
-        480
-      end
-
-    with entrada when not is_nil(entrada) <- pontos_dia[:entrada],
-         saida when not is_nil(saida) <- pontos_dia[:saida] do
-      entrada_time = entrada.original.timestamp
-      saida_time = saida.original.timestamp
-
-      almoco_minutos = calculate_lunch_break(pontos_dia)
-
-      diff_seconds = DateTime.diff(saida_time, entrada_time, :second)
-      diff_minutos = div(diff_seconds, 60)
-
-      trabalhados_minutos = diff_minutos - almoco_minutos
-
-      saldo_minutos = trabalhados_minutos - meta_minutos
-
-      {saldo_minutos, format_time_balance(saldo_minutos)}
-    else
-      _ ->
-        is_working_day =
-          if employee.work_schedule do
-            Date.day_of_week(date) in employee.work_schedule.work_days
-          else
-            not weekend?(date)
-          end
-
-        is_hired = Date.compare(date, employee.admission_date) != :lt
-
-        is_past_or_today = Date.compare(date, Date.utc_today()) != :gt
-
-        if is_working_day and is_hired and is_past_or_today do
-          debito = -meta_minutos
-          {debito, format_time_balance(debito)}
-        else
-          {0, "--:--"}
-        end
-    end
-  end
-
-  defp calculate_lunch_break(pontos_dia) do
-    with ida when not is_nil(ida) <- pontos_dia[:ida_almoco],
-         retorno when not is_nil(retorno) <- pontos_dia[:retorno_almoco] do
-      ida_time = ida.original.timestamp
-      retorno_time = retorno.original.timestamp
-
-      diff_seconds = DateTime.diff(retorno_time, ida_time, :second)
-      div(diff_seconds, 60)
-    else
-      _ -> 0
-    end
-  end
+  defp format_month_input(date), do: Calendar.strftime(date, "%Y-%m")
+  defp weekend?(date), do: Date.day_of_week(date) in [6, 7]
 
   defp format_time_balance(minutos) do
     horas = div(abs(minutos), 60)
@@ -349,12 +384,22 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
+  defp row_class(is_weekend) do
+    if is_weekend,
+      do: "bg-gray-50 dark:bg-zinc-800/50",
+      else: "hover:bg-gray-50 dark:hover:bg-zinc-700/50"
+  end
+
+  defp text_class(is_weekend) do
+    if is_weekend,
+      do: "text-gray-400 dark:text-zinc-500",
+      else: "text-gray-900 dark:text-zinc-100"
+  end
+
   defp parse_local_to_utc(""), do: nil
+  defp parse_local_to_utc(nil), do: nil
 
   defp parse_local_to_utc(local_datetime_string) do
-    # O input datetime-local muitas vezes vem sem segundos (ex: "2023-10-25T14:00")
-    # O Elixir exige segundos.
-    # Se a string for curta (16 chars), adicionamos ":00".
     clean_string =
       if String.length(local_datetime_string) == 16 do
         local_datetime_string <> ":00"
@@ -365,15 +410,22 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     case NaiveDateTime.from_iso8601(clean_string) do
       {:ok, naive_dt} ->
         case DateTime.from_naive(naive_dt, @timezone) do
-          {:ok, local_dt} ->
-            DateTime.shift_zone!(local_dt, "Etc/UTC")
-
-          {:error, _reason} ->
-            nil
+          {:ok, local_dt} -> DateTime.shift_zone!(local_dt, "Etc/UTC")
+          {:error, _} -> nil
         end
 
       {:error, _} ->
         nil
     end
+  end
+
+  defp reload_timesheet_and_close_absence(socket, message) do
+    employee_id = socket.assigns.employee_id
+    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+
+    socket
+    |> put_flash(:info, message)
+    |> assign(absence_form: nil, absence_date: nil)
+    |> load_timesheet(employee_id, date)
   end
 end
