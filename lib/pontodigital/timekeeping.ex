@@ -9,6 +9,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Timekeeping.ClockIn
   alias Pontodigital.Timekeeping.ClockInAdjustment
   alias Pontodigital.Company.Employee
+  alias Pontodigital.Timekeeping.Absence
 
   @doc """
   Returns the list of clock_ins.
@@ -372,4 +373,37 @@ defmodule Pontodigital.Timekeeping do
   def change_clock_in(%ClockIn{} = clock_in, attrs \\ %{}) do
     ClockIn.changeset(clock_in, attrs)
   end
+
+  # Abono de faltas
+
+  @doc """
+  Cria um registro de abono de falta.
+  """
+  def create_absence(attrs) do
+    %Absence{}
+    |> Absence.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Lista todos os abonos de um funcionario dentro de um periodo (mes).
+  Retorna um map para acesso rapido: %{Date => Absence}
+  """
+  def list_absences_map(employee_id, start_date, end_date) do
+    from(a in Absence,
+      where: a.employee_id == ^employee_id,
+      where: a.date >= ^start_date and a.date <= ^end_date
+    )
+    |> Repo.all()
+    |> Map.new(fn absence -> {absence.date, absence} end)
+  end
+
+  @doc """
+  Remove um abono (caso o admin erre)
+  """
+  def delete_absence(%Absence{} = absence) do
+    Repo.delete(absence)
+  end
+
+  def get_absence!(id), do: Repo.get!(Absence, id)
 end
