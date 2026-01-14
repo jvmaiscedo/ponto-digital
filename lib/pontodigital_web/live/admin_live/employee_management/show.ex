@@ -214,7 +214,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     pontos_dia = Map.get(mapa_pontos, day, %{})
     is_weekend = weekend?(day)
 
-    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee)
+    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee, day)
 
     %{
       date: day,
@@ -270,10 +270,16 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
-  defp calculate_balance(pontos_dia, employee) do
+  defp calculate_balance(pontos_dia, employee, date) do
+    meta_minutos =
+      if employee.work_schedule do
+        employee.work_schedule.daily_hours * 60
+      else
+        480
+      end
+
     with entrada when not is_nil(entrada) <- pontos_dia[:entrada],
          saida when not is_nil(saida) <- pontos_dia[:saida] do
-      # 1. Calcular tempo trabalhado
       entrada_time = entrada.original.timestamp
       saida_time = saida.original.timestamp
 
@@ -284,18 +290,28 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
       trabalhados_minutos = diff_minutos - almoco_minutos
 
-      meta_minutos =
-        if employee.work_schedule do
-          employee.work_schedule.daily_hours * 60
-        else
-          480
-        end
-
       saldo_minutos = trabalhados_minutos - meta_minutos
 
       {saldo_minutos, format_time_balance(saldo_minutos)}
     else
-      _ -> {0, "--:--"}
+      _ ->
+        is_working_day =
+          if employee.work_schedule do
+            Date.day_of_week(date) in employee.work_schedule.work_days
+          else
+            not weekend?(date)
+          end
+
+        is_hired = Date.compare(date, employee.admission_date) != :lt
+
+        is_past_or_today = Date.compare(date, Date.utc_today()) != :gt
+
+        if is_working_day and is_hired and is_past_or_today do
+          debito = -meta_minutos
+          {debito, format_time_balance(debito)}
+        else
+          {0, "--:--"}
+        end
     end
   end
 
