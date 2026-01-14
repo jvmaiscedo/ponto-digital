@@ -10,6 +10,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Timekeeping.ClockInAdjustment
   alias Pontodigital.Company.Employee
   alias Pontodigital.Timekeeping.Absence
+  alias Pontodigital.Timekeeping.Holiday
 
   @doc """
   Returns the list of clock_ins.
@@ -406,4 +407,37 @@ defmodule Pontodigital.Timekeeping do
   end
 
   def get_absence!(id), do: Repo.get!(Absence, id)
+
+  # Feriados
+  @doc """
+  Lista todos os feriados dentro de um periodo
+  Retorna um map para acesso rapido
+  """
+  def list_holidays_map(start_date, end_date) do
+    from(h in Holiday,
+      where: h.date >= ^start_date and h.date <= ^end_date,
+      select: {h.date, h.name}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
+  Cria um feriado
+  """
+  def create_holiday(attrs) do
+    %Holiday{}
+    |> Holiday.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def delete_holiday(%Holiday{} = holiday) do
+    Repo.delete(holiday)
+  end
+
+  def list_all_holidays do
+    Repo.all(from h in Holiday, order_by: [asc: h.date])
+  end
+
+  def get_holiday!(id), do: Repo.get!(Holiday, id)
 end

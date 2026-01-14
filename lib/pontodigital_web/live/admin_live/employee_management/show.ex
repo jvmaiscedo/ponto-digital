@@ -230,15 +230,21 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   defp load_timesheet(socket, employee_id, date) do
-    mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
     dias_do_mes = build_month_range(date)
     primeiro_dia = dias_do_mes.first
     ultimo_dia = dias_do_mes.last
 
+    mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
     mapa_abonos = Timekeeping.list_absences_map(employee_id, primeiro_dia, ultimo_dia)
+    mapa_feriados = Timekeeping.list_holidays_map(primeiro_dia, ultimo_dia)
+
     employee = Company.get_employee!(employee_id)
 
-    days_data = Enum.map(dias_do_mes, &prepare_day_data(&1, mapa_pontos, mapa_abonos, employee))
+    days_data =
+      Enum.map(
+        dias_do_mes,
+        &prepare_day_data(&1, mapa_pontos, mapa_abonos, mapa_feriados, employee)
+      )
 
     total_minutos = Enum.reduce(days_data, 0, fn day, acc -> acc + day.saldo_minutos end)
     saldo_total_mes = format_time_balance(total_minutos)
@@ -254,12 +260,15 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     )
   end
 
-  defp prepare_day_data(day, mapa_pontos, mapa_abonos, employee) do
+  defp prepare_day_data(day, mapa_pontos, mapa_abonos, mapa_feriados, employee) do
     pontos_dia = Map.get(mapa_pontos, day, %{})
     abono = Map.get(mapa_abonos, day)
+
+    feriado_nome = Map.get(mapa_feriados, day)
     is_weekend = weekend?(day)
 
-    {saldo_minutos, saldo_formatado} = calculate_balance(pontos_dia, employee, day, abono)
+    {saldo_minutos, saldo_formatado} =
+      calculate_balance(pontos_dia, employee, day, abono, feriado_nome)
 
     %{
       date: day,
@@ -269,6 +278,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       retorno_almoco: pontos_dia[:retorno_almoco],
       saida: pontos_dia[:saida],
       abono: abono,
+      feriado: feriado_nome,
       saldo: saldo_formatado,
       saldo_minutos: saldo_minutos,
       is_weekend: is_weekend,
@@ -277,11 +287,16 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     }
   end
 
-  defp calculate_balance(_points, _employee, _date, %Pontodigital.Timekeeping.Absence{}) do
+  defp calculate_balance(_points, _employee, _date, %Pontodigital.Timekeeping.Absence{}, _feriado) do
     {0, "ABONADO"}
   end
 
-  defp calculate_balance(points, employee, date, nil) do
+  defp calculate_balance(_points, _employee, _date, _abono, feriado_nome)
+       when not is_nil(feriado_nome) do
+    {0, "FERIADO"}
+  end
+
+  defp calculate_balance(points, employee, date, nil, nil) do
     meta = get_daily_meta(employee)
 
     case calculate_worked_minutes(points) do
