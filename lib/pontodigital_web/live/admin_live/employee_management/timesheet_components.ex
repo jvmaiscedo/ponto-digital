@@ -58,7 +58,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
               <.table_header align="center">Retorno almoço</.table_header>
               <.table_header align="center">Saída</.table_header>
               <.table_header align="right">Saldo</.table_header>
-              <.table_header align="right">Ações</.table_header>
+              <.table_header align="center">Ações</.table_header>
             </tr>
           </thead>
 
@@ -125,45 +125,51 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
       </td>
       
     <!-- Ações -->
-      <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-        <div class="flex items-center justify-end gap-2">
-          <%= if @day_data.abono do %>
+      <td class="px-4 py-2 whitespace-nowrap">
+        <div class="flex items-center justify-start gap-2">
+          <%= if @day_data.feriado do %>
             <span
-              class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/30 cursor-help"
-              title={@day_data.abono.reason}
+              class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-900/30 dark:text-purple-400 dark:ring-purple-500/30 cursor-help transition-transform hover:scale-105"
+              title={"Feriado: #{@day_data.feriado}"}
             >
-              <.icon name="hero-check-circle-mini" class="size-3" /> Abonado
+              <.icon name="hero-sparkles-solid" class="size-4" />
             </span>
-
-            <button
-              phx-click="remover_abono"
-              phx-value-id={@day_data.abono.id}
-              data-confirm="Tem certeza que deseja cancelar este abono? A falta voltará a ser cobrada."
-              class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
-              aria-label="Remover Abono"
-              title="Cancelar Abono"
-            >
-              <.icon name="hero-trash" class="size-4" />
-            </button>
           <% else %>
-            <%= if @day_data.saldo_minutos < 0 do %>
-              <button
-                phx-click="abrir_abono"
-                phx-value-date={@day_data.date}
-                class="group flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 hover:bg-yellow-100 transition-all dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-500/30 dark:hover:bg-yellow-900/50"
+            <%= if @day_data.abono do %>
+              <span
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/30 cursor-help"
+                title={"Abonado: #{@day_data.abono.reason}"}
               >
-                <.icon
-                  name="hero-scale"
-                  class="size-3 text-yellow-600 dark:text-yellow-500 group-hover:text-yellow-800"
-                /> Justificar
+                <.icon name="hero-check-circle-solid" class="size-5" />
+              </span>
+
+              <button
+                phx-click="remover_abono"
+                phx-value-id={@day_data.abono.id}
+                data-confirm="Tem certeza que deseja cancelar este abono?"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                title="Remover Abono"
+              >
+                <.icon name="hero-trash" class="size-4" />
               </button>
             <% else %>
+              <%= if @day_data.saldo_minutos < 0 do %>
+                <button
+                  phx-click="abrir_abono"
+                  phx-value-date={@day_data.date}
+                  class="group inline-flex h-8 w-8 items-center justify-center rounded-full bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20 hover:bg-yellow-100 hover:text-yellow-800 transition-all dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-500/30 dark:hover:bg-yellow-900/50"
+                  title="Justificar Ausência"
+                >
+                  <.icon name="hero-scale" class="size-4" />
+                </button>
+              <% end %>
+
               <button
                 phx-click="abrir_novo_ponto"
-                class="text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                title="Adicionar Ponto Manual"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20 transition-all"
+                title="Correção Manual (Adicionar Ponto)"
               >
-                <.icon name="hero-plus-circle" class="size-5" />
+                <.icon name="hero-plus-circle" class="size-6" />
               </button>
             <% end %>
           <% end %>

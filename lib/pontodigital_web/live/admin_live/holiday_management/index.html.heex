@@ -1,0 +1,30 @@
+<div class="mx-auto max-w-6xl">
+  <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        Calendário de Feriados
+      </h1>
+      <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+        Gerencie as datas que serão automaticamente isentas de falta no sistema.
+      </p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <.back_button navigate={~p"/admin/"} />
+      <div class="hidden sm:block">
+        <PontodigitalWeb.Layouts.theme_toggle />
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 items-start">
+    
+    <div class="lg:col-span-1 sticky top-6">
+      <.holiday_form form={@form} />
+    </div>
+
+    <div class="lg:col-span-2">
+      <.holiday_table holidays={@holidays} />
+    </div>
+  </div>
+</div>

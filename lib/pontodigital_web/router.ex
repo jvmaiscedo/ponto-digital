@@ -61,6 +61,7 @@ defmodule PontodigitalWeb.Router do
       live "/funcionarios/:id/editar", AdminLive.EmployeeManagement.Index, :edit
       live "/novo", AdminLive.EmployeeManagement.New, :new
       live "/metricas", AdminLive.MetricsLive.Index, :index
+      live "/feriados", AdminLive.HolidayManagement.Index
     end
   end
 

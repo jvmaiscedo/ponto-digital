@@ -431,6 +431,10 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.insert()
   end
 
+  def change_holiday(%Holiday{} = holiday, attrs \\ %{}) do
+    Holiday.changeset(holiday, attrs)
+  end
+
   def delete_holiday(%Holiday{} = holiday) do
     Repo.delete(holiday)
   end
