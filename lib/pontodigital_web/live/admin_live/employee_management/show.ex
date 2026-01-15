@@ -230,142 +230,42 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   defp load_timesheet(socket, employee_id, date) do
-    dias_do_mes = build_month_range(date)
-    primeiro_dia = dias_do_mes.first
-    ultimo_dia = dias_do_mes.last
-
-    mapa_pontos = Timekeeping.list_timesheet(employee_id, date.year, date.month, @timezone)
-    mapa_abonos = Timekeeping.list_absences_map(employee_id, primeiro_dia, ultimo_dia)
-    mapa_feriados = Timekeeping.list_holidays_map(primeiro_dia, ultimo_dia)
-
     employee = Company.get_employee!(employee_id)
 
-    days_data =
-      Enum.map(
-        dias_do_mes,
-        &prepare_day_data(&1, mapa_pontos, mapa_abonos, mapa_feriados, employee)
-      )
-
-    total_minutos = Enum.reduce(days_data, 0, fn day, acc -> acc + day.saldo_minutos end)
-    saldo_total_mes = format_time_balance(total_minutos)
+    report = Timekeeping.get_monthly_report(employee, date)
 
     assign(socket,
-      days_data: days_data,
-      saldo_total_mes: saldo_total_mes,
-      total_minutos_mes: total_minutos,
-      employee_id: employee_id,
+      report: report,
+      days_data: transform_for_view(report.days),
+      saldo_total_mes: report.formatted_total,
+      total_minutos_mes: report.total_minutes,
+      employee_id: employee.id,
       employee: employee,
       employee_name: employee.full_name,
       mes_selecionado: format_month_input(date)
     )
   end
 
-  defp prepare_day_data(day, mapa_pontos, mapa_abonos, mapa_feriados, employee) do
-    pontos_dia = Map.get(mapa_pontos, day, %{})
-    abono = Map.get(mapa_abonos, day)
+  defp transform_for_view(days_data) do
+    Enum.map(days_data, fn day ->
+      {row_class, text_class} = determine_css_classes(day)
 
-    feriado_nome = Map.get(mapa_feriados, day)
-    is_weekend = weekend?(day)
-
-    {saldo_minutos, saldo_formatado} =
-      calculate_balance(pontos_dia, employee, day, abono, feriado_nome)
-
-    %{
-      date: day,
-      day_of_week: format_weekday(day),
-      entrada: pontos_dia[:entrada],
-      ida_almoco: pontos_dia[:ida_almoco],
-      retorno_almoco: pontos_dia[:retorno_almoco],
-      saida: pontos_dia[:saida],
-      abono: abono,
-      feriado: feriado_nome,
-      saldo: saldo_formatado,
-      saldo_minutos: saldo_minutos,
-      is_weekend: is_weekend,
-      row_class: row_class(is_weekend),
-      text_class: text_class(is_weekend)
-    }
-  end
-
-  defp calculate_balance(_points, _employee, _date, %Pontodigital.Timekeeping.Absence{}, _feriado) do
-    {0, "ABONADO"}
-  end
-
-  defp calculate_balance(_points, _employee, _date, _abono, feriado_nome)
-       when not is_nil(feriado_nome) do
-    {0, "FERIADO"}
-  end
-
-  defp calculate_balance(points, employee, date, nil, nil) do
-    meta = get_daily_meta(employee)
-
-    case calculate_worked_minutes(points) do
-      {:ok, trabalhados} ->
-        saldo = trabalhados - meta
-        {saldo, format_time_balance(saldo)}
-
-      :error ->
-        check_penalty(employee, date, meta)
-    end
-  end
-
-  defp get_daily_meta(%{work_schedule: %{daily_hours: hours}}), do: hours * 60
-  defp get_daily_meta(_employee), do: 480
-
-  defp calculate_worked_minutes(%{entrada: ent, saida: sai} = points)
-       when not is_nil(ent) and not is_nil(sai) do
-    entrada_time = ent.original.timestamp
-    saida_time = sai.original.timestamp
-    almoco = calculate_lunch_break(points)
-
-    diff_seconds = DateTime.diff(saida_time, entrada_time, :second)
-    {:ok, div(diff_seconds, 60) - almoco}
-  end
-
-  defp calculate_worked_minutes(_points), do: :error
-
-  defp check_penalty(employee, date, meta) do
-    if should_charge_absence?(employee, date) do
-      debito = -meta
-      {debito, format_time_balance(debito)}
-    else
-      {0, "--:--"}
-    end
-  end
-
-  defp should_charge_absence?(employee, date) do
-    working_day? = is_working_day?(employee, date)
-    hired? = Date.compare(date, employee.admission_date) != :lt
-    past_or_today? = Date.compare(date, Date.utc_today()) != :gt
-
-    working_day? and hired? and past_or_today?
-  end
-
-  defp is_working_day?(%{work_schedule: %{work_days: days}}, date) do
-    Date.day_of_week(date) in days
-  end
-
-  defp is_working_day?(_employee, date) do
-    not weekend?(date)
-  end
-
-  defp calculate_lunch_break(pontos_dia) do
-    with ida when not is_nil(ida) <- pontos_dia[:ida_almoco],
-         retorno when not is_nil(retorno) <- pontos_dia[:retorno_almoco] do
-      ida_time = ida.original.timestamp
-      retorno_time = retorno.original.timestamp
-
-      diff_seconds = DateTime.diff(retorno_time, ida_time, :second)
-      div(diff_seconds, 60)
-    else
-      _ -> 0
-    end
-  end
-
-  defp build_month_range(date) do
-    primeiro_dia = Date.beginning_of_month(date)
-    ultimo_dia = Date.end_of_month(date)
-    Date.range(primeiro_dia, ultimo_dia)
+      %{
+        date: day.date,
+        day_of_week: format_weekday(day.date),
+        entrada: day.points[:entrada],
+        ida_almoco: day.points[:ida_almoco],
+        retorno_almoco: day.points[:retorno_almoco],
+        saida: day.points[:saida],
+        abono: day.abono,
+        feriado: day.feriado,
+        saldo: day.saldo_visual,
+        saldo_minutos: day.saldo_minutos,
+        is_weekend: day.is_weekend,
+        row_class: row_class,
+        text_class: text_class
+      }
+    end)
   end
 
   defp parse_periodo_seguro(periodo_str) do
@@ -376,15 +276,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   defp format_month_input(date), do: Calendar.strftime(date, "%Y-%m")
-  defp weekend?(date), do: Date.day_of_week(date) in [6, 7]
-
-  defp format_time_balance(minutos) do
-    horas = div(abs(minutos), 60)
-    mins = rem(abs(minutos), 60)
-    sinal = if minutos < 0, do: "-", else: "+"
-
-    "#{sinal}#{String.pad_leading(Integer.to_string(horas), 2, "0")}:#{String.pad_leading(Integer.to_string(mins), 2, "0")}"
-  end
 
   defp format_weekday(date) do
     case Calendar.strftime(date, "%a") do
@@ -399,16 +290,25 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     end
   end
 
-  defp row_class(is_weekend) do
-    if is_weekend,
-      do: "bg-gray-50 dark:bg-zinc-800/50",
-      else: "hover:bg-gray-50 dark:hover:bg-zinc-700/50"
+  defp determine_css_classes(%{feriado: feriado}) when not is_nil(feriado) do
+    {
+      "bg-purple-50 dark:bg-purple-500/10",
+      "text-purple-700 dark:text-purple-300 font-medium"
+    }
   end
 
-  defp text_class(is_weekend) do
-    if is_weekend,
-      do: "text-gray-400 dark:text-zinc-500",
-      else: "text-gray-900 dark:text-zinc-100"
+  defp determine_css_classes(%{is_weekend: true}) do
+    {
+      "bg-gray-50 dark:bg-black/20",
+      "text-gray-400 dark:text-zinc-600"
+    }
+  end
+
+  defp determine_css_classes(_) do
+    {
+      "bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors duration-200",
+      "text-gray-900 dark:text-white font-medium"
+    }
   end
 
   defp parse_local_to_utc(""), do: nil

@@ -11,6 +11,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Company.Employee
   alias Pontodigital.Timekeeping.Absence
   alias Pontodigital.Timekeeping.Holiday
+  alias Pontodigital.Timekeeping.Calculator
 
   @doc """
   Returns the list of clock_ins.
@@ -444,4 +445,102 @@ defmodule Pontodigital.Timekeeping do
   end
 
   def get_holiday!(id), do: Repo.get!(Holiday, id)
+
+  # centralizacao de relatorio completo para o espelho de ponto.
+
+  def get_monthly_report(employee, date) do
+    month_range = build_month_range(date)
+
+    processed_days =
+      employee
+      |> load_context_data(month_range)
+      |> process_month_days(month_range, employee)
+
+    total_minutes = calculate_total_balance(processed_days)
+
+    %{
+      days: processed_days,
+      total_minutes: total_minutes,
+      formatted_total: Calculator.format_balance(total_minutes)
+    }
+  end
+
+  defp build_month_range(date) do
+    Date.range(Date.beginning_of_month(date), Date.end_of_month(date))
+  end
+
+  defp load_context_data(employee, range) do
+    %{
+      points:
+        list_timesheet(employee.id, range.first.year, range.first.month, "America/Sao_Paulo"),
+      absences: list_absences_map(employee.id, range.first, range.last),
+      holidays: list_holidays_map(range.first, range.last)
+    }
+  end
+
+  defp process_month_days(context, range, employee) do
+    daily_meta = get_daily_meta(employee)
+
+    Enum.map(range, fn date ->
+      points = Map.get(context.points, date, %{})
+      absence = Map.get(context.absences, date)
+      holiday = Map.get(context.holidays, date)
+
+      {balance_minutes, balance_visual} =
+        calculate_day_balance(points, daily_meta, absence, holiday, employee, date)
+
+      %{
+        date: date,
+        points: points,
+        abono: absence,
+        feriado: holiday,
+        saldo_minutos: balance_minutes,
+        saldo_visual: balance_visual,
+        is_weekend: weekend?(date)
+      }
+    end)
+  end
+
+  defp get_daily_meta(%{work_schedule: nil}), do: 480
+  defp get_daily_meta(%{work_schedule: ws}), do: ws.daily_hours * 60
+
+  defp calculate_day_balance(points, meta, absence, holiday, employee, date) do
+    result = Calculator.calculate_daily_balance(points, meta, absence, holiday)
+
+    case result do
+      {:missing_records, default_debit} ->
+        resolve_missing_records(default_debit, employee, date, holiday)
+
+      result_ok ->
+        result_ok
+    end
+  end
+
+  defp resolve_missing_records(debit, employee, date, holiday) do
+    case should_charge_absence?(employee, date, holiday) do
+      true ->
+        {debit, Calculator.format_balance(debit)}
+
+      false ->
+        {0, "--:--"}
+    end
+  end
+
+  defp should_charge_absence?(employee, date, holiday_name) do
+    not_holiday = is_nil(holiday_name)
+    is_working_day = check_working_day(employee, date)
+    is_hired = Date.compare(date, employee.admission_date) != :lt
+    past_or_today = Date.compare(date, Date.utc_today()) != :gt
+
+    not_holiday and is_working_day and is_hired and past_or_today
+  end
+
+  defp check_working_day(%{work_schedule: nil}, date), do: not weekend?(date)
+  defp check_working_day(%{work_schedule: ws}, date), do: Date.day_of_week(date) in ws.work_days
+
+  defp weekend?(date), do: Date.day_of_week(date) in [6, 7]
+
+  defp calculate_total_balance(days) do
+    Enum.reduce(days, 0, fn day, acc -> acc + day.saldo_minutos end)
+  end
 end
