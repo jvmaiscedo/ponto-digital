@@ -10,6 +10,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Timekeeping.ClockInAdjustment
   alias Pontodigital.Company.Employee
   alias Pontodigital.Timekeeping.Absence
+  alias Pontodigital.Timekeeping.Vacation
   alias Pontodigital.Timekeeping.Holiday
   alias Pontodigital.Timekeeping.Calculator
 
@@ -446,6 +447,46 @@ defmodule Pontodigital.Timekeeping do
 
   def get_holiday!(id), do: Repo.get!(Holiday, id)
 
+  # Vacation
+  def create_vacation(attrs) do
+    %Vacation{}
+    |> Vacation.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_vacations(employee_id) do
+    Vacation
+    |> where([v], v.employee_id == ^employee_id)
+    |> order_by([v], desc: v.start_date)
+    |> Repo.all()
+  end
+
+  def delete_vacation(%Vacation{} = vacation) do
+    Repo.delete(vacation)
+  end
+
+  def list_vacations_map(employee_id, start_date, end_date) do
+    query =
+      from v in Vacation,
+        where: v.employee_id == ^employee_id,
+        where: v.start_date <= ^end_date and v.end_date >= ^start_date
+
+    vacations = Repo.all(query)
+
+    Enum.reduce(vacations, %{}, fn vacation, acc ->
+      range = Date.range(vacation.start_date, vacation.end_date)
+
+      relevant_range =
+        Enum.filter(range, fn date ->
+          Date.compare(date, start_date) != :lt and Date.compare(date, end_date) != :gt
+        end)
+
+      Enum.reduce(relevant_range, acc, fn date, map_acc ->
+        Map.put(map_acc, date, vacation)
+      end)
+    end)
+  end
+
   # centralizacao de relatorio completo para o espelho de ponto.
 
   def get_monthly_report(employee, date) do
@@ -474,7 +515,8 @@ defmodule Pontodigital.Timekeeping do
       points:
         list_timesheet(employee.id, range.first.year, range.first.month, "America/Sao_Paulo"),
       absences: list_absences_map(employee.id, range.first, range.last),
-      holidays: list_holidays_map(range.first, range.last)
+      holidays: list_holidays_map(range.first, range.last),
+      vacations: list_vacations_map(employee.id, range.first, range.last)
     }
   end
 
@@ -485,15 +527,17 @@ defmodule Pontodigital.Timekeeping do
       points = Map.get(context.points, date, %{})
       absence = Map.get(context.absences, date)
       holiday = Map.get(context.holidays, date)
+      vacation = Map.get(context.vacations, date)
 
       {balance_minutes, balance_visual} =
-        calculate_day_balance(points, daily_meta, absence, holiday, employee, date)
+        calculate_day_balance(points, daily_meta, absence, holiday, vacation, employee, date)
 
       %{
         date: date,
         points: points,
         abono: absence,
         feriado: holiday,
+        ferias: vacation,
         saldo_minutos: balance_minutes,
         saldo_visual: balance_visual,
         is_weekend: weekend?(date)
@@ -504,20 +548,20 @@ defmodule Pontodigital.Timekeeping do
   defp get_daily_meta(%{work_schedule: nil}), do: 480
   defp get_daily_meta(%{work_schedule: ws}), do: ws.daily_hours * 60
 
-  defp calculate_day_balance(points, meta, absence, holiday, employee, date) do
-    result = Calculator.calculate_daily_balance(points, meta, absence, holiday)
+  defp calculate_day_balance(points, meta, absence, holiday, vacation, employee, date) do
+    result = Calculator.calculate_daily_balance(points, meta, absence, holiday, vacation)
 
     case result do
       {:missing_records, default_debit} ->
-        resolve_missing_records(default_debit, employee, date, holiday)
+        resolve_missing_records(default_debit, employee, date, holiday, vacation)
 
       result_ok ->
         result_ok
     end
   end
 
-  defp resolve_missing_records(debit, employee, date, holiday) do
-    case should_charge_absence?(employee, date, holiday) do
+  defp resolve_missing_records(debit, employee, date, holiday, vacation) do
+    case should_charge_absence?(employee, date, holiday, vacation) do
       true ->
         {debit, Calculator.format_balance(debit)}
 
@@ -526,13 +570,14 @@ defmodule Pontodigital.Timekeeping do
     end
   end
 
-  defp should_charge_absence?(employee, date, holiday_name) do
+  defp should_charge_absence?(employee, date, holiday_name, vacation) do
     not_holiday = is_nil(holiday_name)
+    not_vacation = is_nil(vacation)
     is_working_day = check_working_day(employee, date)
     is_hired = Date.compare(date, employee.admission_date) != :lt
     past_or_today = Date.compare(date, Date.utc_today()) != :gt
 
-    not_holiday and is_working_day and is_hired and past_or_today
+    not_holiday and not_vacation and is_working_day and is_hired and past_or_today
   end
 
   defp check_working_day(%{work_schedule: nil}, date), do: not weekend?(date)

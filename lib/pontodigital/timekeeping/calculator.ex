@@ -4,14 +4,14 @@ defmodule Pontodigital.Timekeeping.Calculator do
   saldos e interpretacao de ausencias/faltas
   """
 
-  alias Pontodigital.Timekeeping.Absence
+  alias Pontodigital.Timekeeping.{Absence, Vacation}
 
   @doc """
   Calcula o saldo de um dia específico baseado em todas as variáveis (Pontos, Meta, Abonos, Feriados).
   Retorna: {saldo_minutos, status_formatado}
   """
-  def calculate_daily_balance(pontos, meta_diaria, abono, feriado_nome) do
-    do_calculate(pontos, meta_diaria, abono, feriado_nome)
+  def calculate_daily_balance(pontos, meta_diaria, abono, feriado_nome, vacation) do
+    do_calculate(pontos, meta_diaria, abono, feriado_nome, vacation)
   end
 
   @doc """
@@ -41,16 +41,19 @@ defmodule Pontodigital.Timekeeping.Calculator do
   end
 
   # funcoes privadas
+  defp do_calculate(_points, _meta, _abono, _feriado, %Vacation{}) do
+    {0, "FÉRIAS"}
+  end
 
-  defp do_calculate(_pontos, _meta, _abono, feriado_nome) when not is_nil(feriado_nome) do
+  defp do_calculate(_pontos, _meta, _abono, feriado_nome, nil) when not is_nil(feriado_nome) do
     {0, "FERIADO"}
   end
 
-  defp do_calculate(_pontos, _meta, %Absence{}, _feriado_nome) do
+  defp do_calculate(_pontos, _meta, %Absence{}, _feriado_nome, nil) do
     {0, "ABONADO"}
   end
 
-  defp do_calculate(pontos, meta, nil, nil) do
+  defp do_calculate(pontos, meta, nil, nil, nil) do
     case calculate_worked_minutes(pontos) do
       {:ok, trabalhados} ->
         saldo = trabalhados - meta
