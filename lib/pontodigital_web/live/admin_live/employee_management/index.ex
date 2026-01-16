@@ -2,8 +2,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   use PontodigitalWeb, :live_view
   alias Pontodigital.Company
   alias Pontodigital.Accounts
+  alias Pontodigital.Timekeeping
 
-  # Importa os componentes novos
   import PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents
 
   @impl true
@@ -13,7 +13,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
     {:ok,
      socket
      |> assign(employees: employees)
-     |> assign(search_term: "")}
+     |> assign(search_term: "")
+     |> assign(vacation_employee: nil)
+     |> assign(vacation_form: nil)}
   end
 
   @impl true
@@ -38,6 +40,44 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao desativar funcionário.")}
+    end
+  end
+
+  @impl true
+  def handle_event("abrir_modal_ferias", %{"id" => id}, socket) do
+    employee = Company.get_employee!(id)
+
+    types = %{start_date: :date, end_date: :date}
+    changeset = {%{}, types} |> Ecto.Changeset.cast(%{}, Map.keys(types))
+
+    {:noreply,
+     socket
+     |> assign(vacation_employee: employee)
+     |> assign(vacation_form: to_form(changeset, as: :vacation))}
+  end
+
+  @impl true
+  def handle_event("fechar_modal_ferias", _params, socket) do
+    {:noreply, assign(socket, vacation_employee: nil, vacation_form: nil)}
+  end
+
+  @impl true
+  def handle_event("salvar_ferias", %{"vacation" => params}, socket) do
+    employee_id = socket.assigns.vacation_employee.id
+    attrs = Map.put(params, "employee_id", employee_id)
+
+    case Timekeeping.create_vacation(attrs) do
+      {:ok, _vacation} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "Ferias registradas com sucesso para #{socket.assigns.vacation_employee.full_name}."
+         )
+         |> assign(vacation_employee: nil, vacation_form: nil)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, vacation_form: to_form(changeset, as: :vacation))}
     end
   end
 

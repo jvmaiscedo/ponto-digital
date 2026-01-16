@@ -95,7 +95,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
   defp timesheet_row(assigns) do
     ~H"""
     <tr class={"transition-colors #{@day_data.row_class}"}>
-      <!-- Data -->
       <td class="px-4 py-2 whitespace-nowrap">
         <div class="flex flex-col">
           <span class={"font-medium #{@day_data.text_class}"}>
@@ -106,72 +105,67 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
           </span>
         </div>
       </td>
-      
-    <!-- Entrada -->
+
       <.time_cell time_entry={@day_data.entrada} type="entrada" />
-      
-    <!-- Ida Almoço -->
       <.time_cell time_entry={@day_data.ida_almoco} type="almoco" />
-      
-    <!-- Retorno Almoço -->
       <.time_cell time_entry={@day_data.retorno_almoco} type="almoco" />
-      
-    <!-- Saída -->
       <.time_cell time_entry={@day_data.saida} type="saida" />
-      
-    <!-- Saldo -->
+
       <td class="px-4 py-2 whitespace-nowrap text-right">
         <.balance_badge saldo={@day_data.saldo} />
       </td>
-      
-    <!-- Ações -->
+
       <td class="px-4 py-2 whitespace-nowrap">
         <div class="flex items-center justify-start gap-2">
-          <%= if @day_data.feriado do %>
-            <span
-              class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-900/30 dark:text-purple-400 dark:ring-purple-500/30 cursor-help transition-transform hover:scale-105"
-              title={"Feriado: #{@day_data.feriado}"}
-            >
-              <.icon name="hero-sparkles-solid" class="size-4" />
-            </span>
-          <% else %>
-            <%= if @day_data.abono do %>
-              <span
-                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/30 cursor-help"
-                title={"Abonado: #{@day_data.abono.reason}"}
+          <%= cond do %>
+            <% @day_data.ferias -> %>
+              <button
+                phx-click="remover_ferias"
+                phx-value-id={@day_data.ferias.id}
+                data-confirm="Tem certeza que deseja remover este período de férias?"
+                class="group relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-700/10 dark:bg-teal-900/30 dark:text-teal-400 dark:ring-teal-500/30 transition-all hover:scale-110 hover:bg-red-50 hover:text-red-600 hover:ring-red-600/20 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                title="Em gozo de férias (Clique para remover)"
               >
-                <.icon name="hero-check-circle-solid" class="size-5" />
+                <.icon name="hero-sun" class="size-5 group-hover:hidden" />
+                <.icon name="hero-trash" class="hidden size-4 group-hover:block" />
+              </button>
+            <% @day_data.feriado -> %>
+              <span
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-900/30 dark:text-purple-400 dark:ring-purple-500/30 cursor-help transition-transform hover:scale-105"
+                title={"Feriado: #{@day_data.feriado}"}
+              >
+                <.icon name="hero-sparkles-solid" class="size-4" />
               </span>
-
+            <% @day_data.abono -> %>
               <button
                 phx-click="remover_abono"
                 phx-value-id={@day_data.abono.id}
-                data-confirm="Tem certeza que deseja cancelar este abono?"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                title="Remover Abono"
+                data-confirm="Remover este abono?"
+                class="group relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/30 transition-all hover:scale-110 hover:bg-red-50 hover:text-red-600"
+                title={"Abonado: #{@day_data.abono.reason}"}
               >
-                <.icon name="hero-trash" class="size-4" />
+                <.icon name="hero-check-circle-solid" class="size-5 group-hover:hidden" />
+                <.icon name="hero-trash" class="hidden size-4 group-hover:block" />
               </button>
-            <% else %>
+            <% true -> %>
               <%= if @day_data.saldo_minutos < 0 do %>
                 <button
                   phx-click="abrir_abono"
                   phx-value-date={@day_data.date}
-                  class="group inline-flex h-8 w-8 items-center justify-center rounded-full bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20 hover:bg-yellow-100 hover:text-yellow-800 transition-all dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-500/30 dark:hover:bg-yellow-900/50"
+                  class="group inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-orange-600 dark:hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:scale-110 transition-all duration-200"
                   title="Justificar Ausência"
                 >
-                  <.icon name="hero-scale" class="size-4" />
+                  <.icon name="hero-document-plus" class="size-5" />
                 </button>
               <% end %>
 
               <button
                 phx-click="abrir_novo_ponto"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20 transition-all"
-                title="Correção Manual (Adicionar Ponto)"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors"
+                title="Adicionar ponto manual"
               >
-                <.icon name="hero-plus-circle" class="size-6" />
+                <.icon name="hero-plus-circle" class="size-5" />
               </button>
-            <% end %>
           <% end %>
         </div>
       </td>
@@ -217,29 +211,35 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
   def edit_modal(assigns) do
     ~H"""
     <.modal id="modal-editar-ponto" show on_cancel={JS.push("fechar_modal")}>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-4">
-        Corrigir Registro de Ponto
-      </h2>
+      <.header>
+        Corrigir Registro
+        <:subtitle>
+          Ajuste ou invalide o registro de ponto selecionado.
+        </:subtitle>
+      </.header>
 
       <.simple_form for={@form} phx-submit="salvar_edicao">
-        <div class="bg-gray-50 dark:bg-zinc-800 p-3 rounded-md mb-4 border border-gray-200 dark:border-zinc-700">
-          <p class="text-sm text-gray-500 dark:text-zinc-400">Horário Original:</p>
-          <p class="font-mono text-lg font-bold text-gray-900 dark:text-zinc-100">
-            {@editing_clock_in.timestamp
-            |> DateTime.shift_zone!("America/Sao_Paulo")
-            |> Calendar.strftime("%d/%m/%Y - %H:%M")}
-          </p>
-          <p>Tipo:</p>
-          <p class="font-mono text-lg font-bold text-gray-900 dark:text-zinc-100">
-            {format_clock_in_type(@editing_clock_in.type)}
-          </p>
+        <div class="rounded-md bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 p-4 mb-4 text-sm">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-gray-500 dark:text-zinc-400">Horário Original:</span>
+            <span class="font-mono font-bold text-gray-900 dark:text-zinc-100">
+              {@editing_clock_in.timestamp
+              |> DateTime.shift_zone!("America/Sao_Paulo")
+              |> Calendar.strftime("%d/%m/%Y - %H:%M")}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500 dark:text-zinc-400">Tipo Atual:</span>
+            <span class="font-medium text-gray-900 dark:text-zinc-100">
+              {format_clock_in_type(@editing_clock_in.type)}
+            </span>
+          </div>
         </div>
 
         <.input
           field={@form[:type]}
           type="select"
-          label="Tipo"
-          prompt="Selecione um tipo"
+          label="Novo Tipo"
           options={[
             {"Entrada", :entrada},
             {"Saída", :saida},
@@ -260,12 +260,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
           field={@form[:justification]}
           type="select"
           label="Justificativa"
-          prompt="Selecione um motivo"
+          prompt="Selecione um motivo..."
           options={[
             {"Esquecimento", :esquecimento},
             {"Problema Técnico", :problema_tecnico},
             {"Atestado Médico", :atestado_medico},
-            {"Hora Extra", :hora_extra_autorizada},
+            {"Hora Extra Autorizada", :hora_extra_autorizada},
             {"Outros", :outros}
           ]}
           required
@@ -274,8 +274,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
         <.input
           field={@form[:observation]}
           type="textarea"
-          label="Observações (Detalhes)"
-          placeholder="Ex: O relógio estava sem rede..."
+          label="Observações"
+          placeholder="Detalhes adicionais..."
         />
 
         <:actions>
@@ -294,37 +294,37 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
   def create_modal(assigns) do
     ~H"""
     <.modal id="modal-novo-ponto" show on_cancel={JS.push("fechar_modal_criacao")}>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100 mb-4">
-        Adicionar Ponto Manualmente
-      </h2>
-      <p class="text-sm text-gray-500 mb-4">
-        Utilize para inserir registros esquecidos.
-      </p>
+      <.header>
+        Adicionar Ponto Manual
+        <:subtitle>Insira um registro esquecido ou não contabilizado.</:subtitle>
+      </.header>
 
       <.simple_form for={@form} phx-submit="salvar_novo_ponto">
-        <.input
-          field={@form[:type]}
-          type="select"
-          label="Tipo do Registro"
-          prompt="Selecione..."
-          options={[
-            {"Entrada", :entrada},
-            {"Saída", :saida},
-            {"Ida para Almoço", :ida_almoco},
-            {"Volta do Almoço", :retorno_almoco}
-          ]}
-          required
-        />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <.input
+            field={@form[:type]}
+            type="select"
+            label="Tipo"
+            prompt="Selecione..."
+            options={[
+              {"Entrada", :entrada},
+              {"Saída", :saida},
+              {"Ida para Almoço", :ida_almoco},
+              {"Volta do Almoço", :retorno_almoco}
+            ]}
+            required
+          />
 
-        <.input
-          field={@form[:timestamp]}
-          type="datetime-local"
-          label="Data e Hora"
-          required
-        />
+          <.input
+            field={@form[:timestamp]}
+            type="datetime-local"
+            label="Data e Hora"
+            required
+          />
+        </div>
 
-        <div class="border-t border-gray-200 dark:border-zinc-700 my-4 pt-4">
-          <p class="text-sm font-medium text-gray-900 dark:text-zinc-100 mb-2">Auditoria</p>
+        <div class="pt-2 border-t border-gray-100 dark:border-zinc-800 mt-2">
+          <p class="text-xs font-semibold uppercase text-gray-500 mb-3 tracking-wider">Auditoria</p>
 
           <.input
             field={@form[:justification]}
@@ -333,7 +333,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
             prompt="Selecione..."
             options={[
               {"Esquecimento", :esquecimento},
-              {"Problema Técnico (Relógio)", :problema_tecnico},
+              {"Problema Técnico", :problema_tecnico},
               {"Outros", :outros}
             ]}
             required
@@ -364,71 +364,40 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
   def absence_modal(assigns) do
     ~H"""
     <.modal id="modal-abono" show on_cancel={JS.push("fechar_modal_abono")}>
-      <div class="flex items-start gap-4 mb-6">
-        <div class="flex-none p-2 rounded-full bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500">
-          <.icon name="hero-clipboard-document-check" class="size-6" />
-        </div>
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-zinc-100">
-            Justificar Ausência
-          </h2>
-          <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-            Você está abonando a falta do dia:
-          </p>
-          <div class="mt-2 inline-flex items-center px-3 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
-            <.icon name="hero-calendar" class="size-4 text-gray-500 mr-2" />
-            <span class="font-mono font-bold text-gray-900 dark:text-zinc-200">
-              {Calendar.strftime(@date, "%d/%m/%Y")}
-            </span>
-          </div>
-        </div>
-      </div>
+      <.header>
+        Justificar Ausência
+        <:subtitle>
+          Abonar falta do dia <span class="font-bold text-indigo-600 dark:text-indigo-400"><%= Calendar.strftime(@date, "%d/%m/%Y") %></span>.
+        </:subtitle>
+      </.header>
 
-      <.simple_form for={@form} phx-submit="salvar_abono" class="space-y-6">
+      <.simple_form for={@form} phx-submit="salvar_abono">
         <.input field={@form[:date]} type="hidden" value={@date} />
 
-        <div class="bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-gray-200 dark:border-zinc-700 space-y-4">
-          <.input
-            field={@form[:reason]}
-            type="select"
-            label="Motivo Legal"
-            prompt="Selecione o motivo..."
-            options={[
-              {"Atestado Médico", "atestado_medico"},
-              {"Folga Compensatória", "folga_banco"},
-              {"Feriado Local", "feriado_local"},
-              {"Licença Remunerada (Luto/Gala)", "licenca"},
-              {"Outros", "outros"}
-            ]}
-            required
-            class="!bg-white dark:!bg-zinc-900"
-          />
+        <.input
+          field={@form[:reason]}
+          type="select"
+          label="Motivo Legal"
+          prompt="Selecione o motivo..."
+          options={[
+            {"Atestado Médico", "atestado_medico"},
+            {"Folga Compensatória", "folga_banco"},
+            {"Feriado Local", "feriado_local"},
+            {"Licença Remunerada", "licenca"},
+            {"Outros", "outros"}
+          ]}
+          required
+        />
 
-          <.input
-            field={@form[:observation]}
-            type="textarea"
-            label="Detalhamento / CID"
-            placeholder="Descreva detalhes adicionais para auditoria..."
-            class="min-h-[80px] !bg-white dark:!bg-zinc-900"
-          />
-        </div>
+        <.input
+          field={@form[:observation]}
+          type="textarea"
+          label="Detalhamento / CID"
+          placeholder="Descreva detalhes adicionais para auditoria..."
+        />
 
         <:actions>
-          <div class="flex w-full gap-3">
-            <button
-              type="button"
-              phx-click={JS.push("fechar_modal_abono")}
-              class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Confirmar Abono
-            </button>
-          </div>
+          <.button class="w-full">Confirmar Abono</.button>
         </:actions>
       </.simple_form>
     </.modal>

@@ -19,3 +19,8 @@
     patch={~p"/admin/funcionarios"} 
   />
 </.modal>
+<.vacation_modal 
+  :if={@vacation_employee} 
+  employee={@vacation_employee} 
+  form={@vacation_form} 
+/>

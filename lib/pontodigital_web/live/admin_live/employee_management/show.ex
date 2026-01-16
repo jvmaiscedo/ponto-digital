@@ -166,6 +166,20 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     {:noreply, reload_timesheet_and_close_absence(socket, "Abono removido.")}
   end
 
+  @impl true
+  def handle_event("remover_ferias", %{"id" => id}, socket) do
+    vacation = Timekeeping.get_vacation!(id)
+    {:ok, _} = Timekeeping.delete_vacation(vacation)
+
+    employee_id = socket.assigns.employee_id
+    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Férias removidas com sucesso.")
+     |> load_timesheet(employee_id, date)}
+  end
+
   defp handle_invalidation(socket, clock_in, params, admin_id) do
     case Timekeeping.invalidate_clock_in(
            clock_in,
@@ -259,6 +273,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
         saida: day.points[:saida],
         abono: day.abono,
         feriado: day.feriado,
+        ferias: day.ferias,
         saldo: day.saldo_visual,
         saldo_minutos: day.saldo_minutos,
         is_weekend: day.is_weekend,

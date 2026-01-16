@@ -454,6 +454,11 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.insert()
   end
 
+  def get_vacation!(id) do
+    Vacation
+    |> Repo.get!(id)
+  end
+
   def list_vacations(employee_id) do
     Vacation
     |> where([v], v.employee_id == ^employee_id)

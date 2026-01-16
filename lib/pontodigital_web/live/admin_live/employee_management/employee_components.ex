@@ -230,8 +230,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
-  # --- HELPERS (MANTIDOS) ---
-
   defp table_header(assigns) do
     ~H"""
     <th
@@ -259,6 +257,46 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
+  @doc """
+  Modal específico para cadastro de férias.
+  """
+  attr :employee, :map, required: true
+  attr :form, :map, required: true
+
+  def vacation_modal(assigns) do
+    ~H"""
+    <.modal
+      id="vacation-modal"
+      show
+      on_cancel={JS.push("fechar_modal_ferias")}
+    >
+      <.header>
+        Registrar Férias
+        <:subtitle>
+          Defina o período de férias para <span class="font-bold text-indigo-600 dark:text-indigo-400"><%= @employee.full_name %></span>.
+        </:subtitle>
+      </.header>
+
+      <.simple_form
+        for={@form}
+        id="vacation-form"
+        phx-submit="salvar_ferias"
+      >
+        <div class="grid grid-cols-2 gap-4">
+          <.input field={@form[:start_date]} type="date" label="Início" required />
+          <.input field={@form[:end_date]} type="date" label="Fim" required />
+        </div>
+
+        <:actions>
+          <.button phx-disable-with="Salvando..." class="w-full">
+            Confirmar Férias
+          </.button>
+        </:actions>
+      </.simple_form>
+    </.modal>
+    """
+  end
+
   attr :employee, :map, required: true
 
   def action_buttons(assigns) do
@@ -273,12 +311,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       </.link>
 
       <.link
-        phx-click={JS.push("desativar_funcionario", value: %{id: @employee.id})}
-        data-confirm="Tem certeza que deseja desativar este funcionário?"
-        class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        aria-label="Desativar"
+        phx-click="abrir_modal_ferias"
+        phx-value-id={@employee.id}
+        class="text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+        aria-label="Registrar Férias"
+        title="Registrar Férias"
       >
-        <.icon name="hero-link" class="size-5" />
+        <.icon name="hero-calendar" class="size-5" />
       </.link>
 
       <.link
@@ -287,6 +326,15 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
         aria-label="Ver Espelho"
       >
         <.icon name="hero-eye" class="size-5" />
+      </.link>
+
+      <.link
+        phx-click={JS.push("desativar_funcionario", value: %{id: @employee.id})}
+        data-confirm="Tem certeza que deseja desativar este funcionário?"
+        class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+        aria-label="Desativar"
+      >
+        <.icon name="hero-link" class="size-5" />
       </.link>
     </div>
     """
