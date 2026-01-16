@@ -304,7 +304,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       <.link
         patch={~p"/admin/funcionarios/#{@employee.id}/editar"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-        aria-label="Editar"
+        title="Editar"
       >
         <.icon name="hero-pencil-square" class="size-5" />
       </.link>
@@ -323,6 +323,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
         navigate={~p"/admin/funcionarios/#{@employee.id}"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         aria-label="Ver Espelho"
+        title="Ver Espelho"
       >
         <.icon name="hero-eye" class="size-5" />
       </.link>
@@ -331,7 +332,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
         phx-click={JS.push("desativar_funcionario", value: %{id: @employee.id})}
         data-confirm="Tem certeza que deseja desativar este funcionário?"
         class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        aria-label="Desativar"
+        aria-label="Desativar Funcionario"
+        title="Desativar Funcionario"
       >
         <.icon name="hero-link" class="size-5" />
       </.link>
