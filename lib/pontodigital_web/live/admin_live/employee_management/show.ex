@@ -58,7 +58,14 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   @impl true
-  def handle_event("mudar_periodo", %{"periodo" => periodo_str}, socket) do
+  def handle_event("mudar_periodo", params, socket) do
+    periodo_str =
+      if Map.has_key?(params, "ano") and Map.has_key?(params, "mes") do
+        "#{params["ano"]}-#{params["mes"]}"
+      else
+        params["periodo"] || ""
+      end
+
     data = parse_periodo_seguro(periodo_str)
     employee_id = socket.assigns.employee_id
 
@@ -285,8 +292,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
   defp parse_periodo_seguro(periodo_str) do
     case Date.from_iso8601("#{periodo_str}-01") do
-      {:ok, data} -> data
-      {:error, _} -> Date.utc_today()
+      {:ok, data} ->
+        data
+
+      {:error, _} ->
+        Date.utc_today() |> Date.beginning_of_month()
     end
   end
 
