@@ -1,0 +1,31 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-5xl text-zinc-800 pb-12 px-4">
+    <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.page_header 
+      employee={@employee} 
+      title="Painel do Colaborador" 
+    />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.menu_card
+        to={~p"/workspace/registrar"}
+        icon="hero-clock"
+        title="Registrar Ponto"
+        description="Registre sua entrada, saída e pausas de almoço."
+      />
+
+      <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.menu_card
+        to={~p"/workspace/diario"}
+        icon="hero-document-text"
+        title="Diário de Bordo"
+        description="Descreva suas atividades do dia para o relatório."
+      />
+
+      <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.menu_card
+        to={~p"/workspace/historico"}
+        icon="hero-table-cells"
+        title="Meu Histórico"
+        description="Consulte seus registros passados e horas trabalhadas."
+      />
+    </div>
+  </div>
+</Layouts.app>

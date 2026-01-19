@@ -69,8 +69,14 @@ defmodule PontodigitalWeb.Router do
     pipe_through :employee_access
 
     live_session :employee_workspace,
-      on_mount: [{PontodigitalWeb.UserAuth, :require_authenticated}] do
-      live "/ponto", ClockInLive.Index, :index
+      on_mount: [
+        {PontodigitalWeb.UserAuth, :require_authenticated},
+        PontodigitalWeb.EmployeeLive.Hooks.AssignEmployee
+      ] do
+      live "/", EmployeeLive.Dashboard, :index
+      live "/registrar", EmployeeLive.ClockIn, :index
+      live "/diario", EmployeeLive.DailyLog, :index
+      live "/historico", EmployeeLive.History, :index
     end
   end
 

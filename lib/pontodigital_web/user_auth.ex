@@ -293,8 +293,7 @@ defmodule PontodigitalWeb.UserAuth do
   def signed_in_path(user) do
     case user.role do
       :admin -> ~p"/admin/"
-      # todo: impedir login de funcionario desligado da empresa.
-      :employee -> ~p"/workspace/ponto"
+      :employee -> ~p"/workspace"
     end
   end
 

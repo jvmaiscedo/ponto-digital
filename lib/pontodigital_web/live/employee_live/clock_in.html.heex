@@ -1,0 +1,13 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-2xl text-zinc-800 pb-12 px-4">
+    <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.page_header
+      employee={@employee}
+      title="Registrar Ponto"
+      back_to={~p"/workspace"}
+    />
+
+    <div class="mt-8">
+      <PontodigitalWeb.EmployeeLive.Components.ClockInComponents.clock_in_grid />
+    </div>
+  </div>
+</Layouts.app>

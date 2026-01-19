@@ -1,0 +1,15 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-5xl text-zinc-800 pb-12 px-4">
+    <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.page_header
+      employee={@employee}
+      title="Histórico de Registros"
+      back_to={~p"/workspace"}
+    />
+
+    <div class="mt-8">
+      <PontodigitalWeb.EmployeeLive.Components.ClockInComponents.history_table 
+        clock_ins={@clock_ins} 
+      />
+    </div>
+  </div>
+</Layouts.app>

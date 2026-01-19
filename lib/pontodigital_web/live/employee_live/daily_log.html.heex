@@ -1,0 +1,13 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-3xl text-zinc-800 pb-12 px-4">
+    <PontodigitalWeb.EmployeeLive.Components.EmployeeComponents.page_header
+      employee={@employee}
+      title="Diário de Bordo"
+      back_to={~p"/workspace"}
+    />
+
+    <div class="mt-8">
+      <DailyLogComponents.daily_log_form form={@form} />
+    </div>
+  </div>
+</Layouts.app>

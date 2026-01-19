@@ -2,7 +2,7 @@ defmodule Pontodigital.Timekeeping.DailyLog do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "daily_log" do
+  schema "daily_logs" do
     field :date, :date
     field :description, :string
     belongs_to :employee, Pontodigital.Company.Employee
