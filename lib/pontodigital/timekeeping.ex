@@ -13,6 +13,7 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Timekeeping.Vacation
   alias Pontodigital.Timekeeping.Holiday
   alias Pontodigital.Timekeeping.Calculator
+  alias Pontodigital.Timekeeping.DailyLog
 
   @doc """
   Returns the list of clock_ins.
@@ -521,7 +522,8 @@ defmodule Pontodigital.Timekeeping do
         list_timesheet(employee.id, range.first.year, range.first.month, "America/Sao_Paulo"),
       absences: list_absences_map(employee.id, range.first, range.last),
       holidays: list_holidays_map(range.first, range.last),
-      vacations: list_vacations_map(employee.id, range.first, range.last)
+      vacations: list_vacations_map(employee.id, range.first, range.last),
+      daily_logs: list_daily_logs_map(employee.id, range.first, range.last)
     }
   end
 
@@ -533,6 +535,7 @@ defmodule Pontodigital.Timekeeping do
       absence = Map.get(context.absences, date)
       holiday = Map.get(context.holidays, date)
       vacation = Map.get(context.vacations, date)
+      daily_log = Map.get(context.daily_logs, date)
 
       {balance_minutes, balance_visual} =
         calculate_day_balance(points, daily_meta, absence, holiday, vacation, employee, date)
@@ -543,6 +546,7 @@ defmodule Pontodigital.Timekeeping do
         abono: absence,
         feriado: holiday,
         ferias: vacation,
+        daily_log: daily_log,
         saldo_minutos: balance_minutes,
         saldo_visual: balance_visual,
         is_weekend: weekend?(date)
@@ -592,5 +596,43 @@ defmodule Pontodigital.Timekeeping do
 
   defp calculate_total_balance(days) do
     Enum.reduce(days, 0, fn day, acc -> acc + day.saldo_minutos end)
+  end
+
+  # Daily logs
+  @doc """
+  Busca o log de atividades de um funcionário em uma data específica.
+  Retorna nil se não existir.
+  """
+  def get_daily_log(employee_id, date) do
+    Repo.get_by(DailyLog, employee_id: employee_id, date: date)
+  end
+
+  @doc """
+  Cria ou Atualiza o log de atividades do dia.
+  """
+  def save_daily_log(attrs) do
+    employee_id = attrs["employee_id"] || attrs[:employee_id]
+    date = attrs["date"] || attrs[:date]
+
+    case get_daily_log(employee_id, date) do
+      nil ->
+        %DailyLog{}
+        |> DailyLog.changeset(attrs)
+        |> Repo.insert()
+
+      existing_log ->
+        existing_log
+        |> DailyLog.changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
+  defp list_daily_logs_map(employee_id, start_date, end_date) do
+    from(l in DailyLog,
+      where: l.employee_id == ^employee_id,
+      where: l.date >= ^start_date and l.date <= ^end_date
+    )
+    |> Repo.all()
+    |> Map.new(fn log -> {log.date, log} end)
   end
 end
