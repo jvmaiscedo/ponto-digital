@@ -554,6 +554,7 @@ defmodule Pontodigital.Timekeeping do
     end)
   end
 
+  defp get_daily_meta(%{work_schedule: %Ecto.Association.NotLoaded{}}), do: 480
   defp get_daily_meta(%{work_schedule: nil}), do: 480
   defp get_daily_meta(%{work_schedule: ws}), do: ws.daily_hours * 60
 
