@@ -77,6 +77,7 @@ defmodule PontodigitalWeb.Router do
       live "/registrar", EmployeeLive.ClockIn, :index
       live "/diario", EmployeeLive.DailyLog, :index
       live "/historico", EmployeeLive.History, :index
+      get "/relatorios/espelho", ReportController, :timesheet
     end
   end
 

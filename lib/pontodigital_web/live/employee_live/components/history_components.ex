@@ -8,6 +8,7 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
 
   attr :month, :integer, required: true
   attr :year, :integer, required: true
+  attr :employee, :map, required: true
 
   def filter_bar(assigns) do
     current_year = Date.utc_today().year
@@ -56,12 +57,14 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
         </div>
       </.form>
 
-      <button
-        type="button"
-        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+      <.link
+        href={
+          ~p"/workspace/relatorios/espelho?month=#{@month}&year=#{@year}&employee_id=#{@employee.id}"
+        }
+        class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors"
       >
-        PDF
-      </button>
+        <.icon name="hero-arrow-down-tray" class="size-4" /> Baixar PDF
+      </.link>
     </div>
     """
   end
