@@ -9,8 +9,7 @@ defmodule Pontodigital.Reports.TimesheetData do
     report = Timekeeping.get_monthly_report(employee, target_date)
 
     %{
-      company_name: "Pontodigital Tecnologia LTDA",
-      company_cnpj: "00.000.000/0001-00",
+      company_name: "CIPEC - Laboratório Lindalva",
       period: "#{format_month(month)}/#{year}",
       emitted_at: Calendar.strftime(Date.utc_today(), "%d/%m/%Y"),
       employee: %{
@@ -29,6 +28,7 @@ defmodule Pontodigital.Reports.TimesheetData do
       lunch: format_intervals(day.points[:ida_almoco], day.points[:retorno_almoco]),
       exit: format_point(day.points[:saida]),
       balance: day.saldo_visual,
+      daily_log: daily_log_check(day),
       obs: format_obs(day)
     }
   end
@@ -49,8 +49,7 @@ defmodule Pontodigital.Reports.TimesheetData do
     cond do
       day.ferias -> "Férias"
       day.feriado -> "Feriado: #{day.feriado}"
-      day.abono -> "Abonado: #{format_abono_reason(day.abono.reason)}"
-      day.daily_log -> day.daily_log.description
+      day.abono -> "#{format_abono_reason(day.abono.reason)}"
       true -> ""
     end
   end
@@ -60,6 +59,13 @@ defmodule Pontodigital.Reports.TimesheetData do
       ~w(Janeiro Fevereiro Março Abril Maio Junho Julho Agosto Setembro Outubro Novembro Dezembro),
       m - 1
     )
+  end
+
+  defp daily_log_check(day) do
+    case day.daily_log do
+      nil -> ""
+      log -> log.description
+    end
   end
 
   defp format_abono_reason(reason) do

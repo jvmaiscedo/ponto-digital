@@ -4,7 +4,7 @@
   margin: (x: 2cm, y: 2cm),
 )
 #set text(
-  font: "Liberation Sans", 
+  font: "Liberation Sans",
   size: 10pt,
   lang: "pt"
 )
@@ -39,39 +39,22 @@
 
 
 #table(
-  columns: (auto, 1fr, 1fr, 1fr, 1fr, 2fr),
+  columns: (auto, 1fr, 1fr, 1fr, 2fr, 2fr),
   inset: 8pt,
-  align: (center + horizon, center + horizon, center + horizon, center + horizon, right + horizon, left + horizon),
+  align: (center + horizon, center + horizon, center + horizon, center + horizon, center + horizon, left + horizon),
   fill: (col, row) => if row == 0 { luma(230) } else { none },
   
-  // Cabeçalhos
-  [*Data*], [*Entrada*], [*Almoço*], [*Saída*], [*Saldo*], [*Obs*],
+  [*Data*], [*Entrada*], [*Almoço*], [*Saída*],[*Atividade*], [*Obs*],
 
-  // Linhas (Extraídas do JSON)
   ..data.days.map(d => (
     d.date,
     d.entry,
     d.lunch,
     d.exit,
-    // Condicional de cor para saldo negativo
-    text(fill: if d.balance.starts-with("-") { red } else { black })[#d.balance],
+    d.daily_log,
     text(size: 8pt, style: "italic")[#d.obs]
   )).flatten()
 )
-
-// --- TOTAIS ---
-#v(5mm)
-#align(right)[
-  #block(
-    fill: luma(240),
-    inset: 10pt,
-    radius: 4pt,
-    [
-      *Saldo Total:* #h(5mm) 
-      #text(12pt, weight: "bold")[#data.total_balance]
-    ]
-  )
-]
 
 
 #place(
@@ -85,12 +68,12 @@
       align(center)[
         #line(length: 80%, stroke: 0.5pt)
         #data.employee.name \
-        #text(8pt)[Assinatura do Funcionário]
+        #text(8pt)[Assinatura do Estagiário]
       ],
       align(center)[
         #line(length: 80%, stroke: 0.5pt)
-        Pontodigital Tecnologia \
-        #text(8pt)[Assinatura do Empregador]
+        CIPEC \
+        #text(8pt)[Assinatura do Professor Orientador]
       ]
     )
     #v(5mm)
