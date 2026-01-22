@@ -62,8 +62,9 @@ defmodule PontodigitalWeb.Router do
       live "/novo", AdminLive.EmployeeManagement.New, :new
       live "/metricas", AdminLive.MetricsLive.Index, :index
       live "/feriados", AdminLive.HolidayManagement.Index
-      get "/relatorios/espelho", ReportController, :timesheet
     end
+
+    get "/relatorios/espelho", ReportController, :timesheet
   end
 
   scope "/workspace", PontodigitalWeb do
@@ -78,8 +79,9 @@ defmodule PontodigitalWeb.Router do
       live "/registrar", EmployeeLive.ClockIn, :index
       live "/diario", EmployeeLive.DailyLog, :index
       live "/historico", EmployeeLive.History, :index
-      get "/relatorios/espelho", ReportController, :timesheet
     end
+
+    get "/relatorios/espelho", ReportController, :timesheet
   end
 
   ## --- ÁREA DO USUÁRIO COMUM (Configs) ---
