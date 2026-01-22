@@ -62,6 +62,7 @@ defmodule PontodigitalWeb.Router do
       live "/novo", AdminLive.EmployeeManagement.New, :new
       live "/metricas", AdminLive.MetricsLive.Index, :index
       live "/feriados", AdminLive.HolidayManagement.Index
+      get "/relatorios/espelho", ReportController, :timesheet
     end
   end
 

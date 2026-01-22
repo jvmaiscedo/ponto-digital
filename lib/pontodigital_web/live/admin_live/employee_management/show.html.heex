@@ -1,7 +1,15 @@
 <div class="mx-auto max-w-5xl">
+    <div class="mb-6">
+    <.link
+      navigate={~p"/admin/funcionarios"}
+      class="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+    >
+      <.icon name="hero-arrow-left" class="size-4" />
+      Voltar para a lista de funcionários
+    </.link>
+  </div>
   <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div class="flex items-center gap-4">
-      <.back_button navigate={~p"/admin/funcionarios"} />
       <div>
         <h1 class="text-xl font-semibold text-gray-900 dark:text-zinc-100">
           Espelho de Ponto
@@ -13,17 +21,11 @@
       </div>
     </div>
     
-    <.period_filter mes_selecionado={@mes_selecionado} />
-
-    <div>
-      <button
-        disabled
-        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm opacity-50 cursor-not-allowed"
-        title="Funcionalidade em desenvolvimento"
-      >
-        Exportar PDF (em breve)
-      </button>
-    </div>
+    <.period_filter 
+      month={@month}
+      year={@year}
+      employee={@employee}
+    />
   </div>
 
   <div class="mb-6 p-4 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-gray-200 dark:border-zinc-700 flex items-center justify-between">

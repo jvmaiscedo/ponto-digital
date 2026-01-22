@@ -3,43 +3,38 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
   Componentes específicos para o espelho de ponto.
   """
   use Phoenix.Component
+  use PontodigitalWeb, :html
   import PontodigitalWeb.CoreComponents
   alias Phoenix.LiveView.JS
 
   @doc """
   Componente de filtro de período
   """
-  attr :mes_selecionado, :string, required: true
+  attr :month, :integer, required: true
+  attr :year, :integer, required: true
+  attr :employee, :map, required: true
 
   def period_filter(assigns) do
-    current_date =
-      case Date.from_iso8601(assigns.mes_selecionado <> "-01") do
-        {:ok, date} -> date
-        _ -> Date.utc_today()
-      end
-
-    current_year = current_date.year
+    current_year = Date.utc_today().year
     years = (current_year - 5)..(current_year + 2)
 
     months = [
-      {"Janeiro", "01"},
-      {"Fevereiro", "02"},
-      {"Março", "03"},
-      {"Abril", "04"},
-      {"Maio", "05"},
-      {"Junho", "06"},
-      {"Julho", "07"},
-      {"Agosto", "08"},
-      {"Setembro", "09"},
-      {"Outubro", "10"},
-      {"Novembro", "11"},
-      {"Dezembro", "12"}
+      {1, "Janeiro"},
+      {2, "Fevereiro"},
+      {3, "Março"},
+      {4, "Abril"},
+      {5, "Maio"},
+      {6, "Junho"},
+      {7, "Julho"},
+      {8, "Agosto"},
+      {9, "Setembro"},
+      {10, "Outubro"},
+      {11, "Novembro"},
+      {12, "Dezembro"}
     ]
 
     assigns =
       assign(assigns,
-        selected_month: Calendar.strftime(current_date, "%m"),
-        selected_year: current_year,
         months: months,
         suggested_years: years
       )
@@ -52,37 +47,31 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
             name="mes"
             class="block w-full rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 cursor-pointer"
           >
-            <%= for {name, value} <- @months do %>
-              <option value={value} selected={value == @selected_month}>{name}</option>
+            <%= for {value, name} <- @months do %>
+              <option value={value} selected={value == @month}>{name}</option>
             <% end %>
           </select>
         </div>
 
-        <div class="w-24 relative">
-          <input
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
+        <div class="w-24">
+          <select
             name="ano"
-            value={@selected_year}
-            list="years_list"
-            placeholder="Ano"
-            required
-            class="block w-full rounded-md border-0 py-2 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700"
-          />
-          <datalist id="years_list">
+            class="block w-full rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 cursor-pointer"
+          >
             <%= for year <- @suggested_years do %>
-              <option value={year}></option>
+              <option value={year} selected={year == @year}>{year}</option>
             <% end %>
-          </datalist>
+          </select>
         </div>
 
-        <button
-          type="submit"
-          class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+        <.link
+          href={
+            ~p"/admin/relatorios/espelho?month=#{@month}&year=#{@year}&employee_id=#{@employee.id}"
+          }
+          class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors"
         >
-          Filtrar
-        </button>
+          <.icon name="hero-arrow-down-tray" class="size-4" /> Baixar PDF
+        </.link>
       </.form>
     </div>
     """

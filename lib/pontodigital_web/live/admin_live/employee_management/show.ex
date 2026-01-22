@@ -58,18 +58,19 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   @impl true
-  def handle_event("mudar_periodo", params, socket) do
-    periodo_str =
-      if Map.has_key?(params, "ano") and Map.has_key?(params, "mes") do
-        "#{params["ano"]}-#{params["mes"]}"
-      else
-        params["periodo"] || ""
-      end
+  def handle_event("mudar_periodo", %{"mes" => mes_str, "ano" => ano_str}, socket) do
+    {m, _} = Integer.parse(mes_str)
+    {y, _} = Integer.parse(ano_str)
 
-    data = parse_periodo_seguro(periodo_str)
+    data = Date.new!(y, m, 1)
+
     employee_id = socket.assigns.employee_id
-
     {:noreply, load_timesheet(socket, employee_id, data)}
+  end
+
+  # Fallback caso venha com nomes diferentes (opcional, mas bom pra segurança)
+  def handle_event("mudar_periodo", _params, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -127,7 +128,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
 
   @impl true
   def handle_event("abrir_abono", %{"date" => date_str}, socket) do
-    # Changeset schemaless para o formulário
     types = %{date: :date, reason: :string, observation: :string}
     changeset = {%{}, types} |> Ecto.Changeset.cast(%{}, Map.keys(types))
 
@@ -148,7 +148,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
     employee_id = socket.assigns.employee_id
 
     attrs = %{
-      # Usamos a data do assign por segurança
       "date" => socket.assigns.absence_date,
       "reason" => params["reason"],
       "observation" => params["observation"],
@@ -177,14 +176,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   def handle_event("remover_ferias", %{"id" => id}, socket) do
     vacation = Timekeeping.get_vacation!(id)
     {:ok, _} = Timekeeping.delete_vacation(vacation)
-
-    employee_id = socket.assigns.employee_id
-    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+    current_date = Date.new!(socket.assigns.year, socket.assigns.month, 1)
 
     {:noreply,
      socket
      |> put_flash(:info, "Férias removidas com sucesso.")
-     |> load_timesheet(employee_id, date)}
+     |> load_timesheet(socket.assigns.employee_id, current_date)}
   end
 
   defp handle_invalidation(socket, clock_in, params, admin_id) do
@@ -240,19 +237,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   defp validate_justification(just), do: {:ok, just}
 
   defp reload_timesheet_and_close(socket, message) do
-    employee_id = socket.assigns.employee_id
-    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+    current_date = Date.new!(socket.assigns.year, socket.assigns.month, 1)
 
     socket
     |> put_flash(:info, message)
     |> assign(editing_clock_in: nil)
     |> assign(new_point_form: nil)
-    |> load_timesheet(employee_id, date)
+    |> load_timesheet(socket.assigns.employee_id, current_date)
   end
 
   defp load_timesheet(socket, employee_id, date) do
     employee = Company.get_employee!(employee_id)
-
     report = Timekeeping.get_monthly_report(employee, date)
 
     assign(socket,
@@ -263,7 +258,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       employee_id: employee.id,
       employee: employee,
       employee_name: employee.full_name,
-      mes_selecionado: format_month_input(date)
+      month: date.month,
+      year: date.year
     )
   end
 
@@ -289,18 +285,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
       }
     end)
   end
-
-  defp parse_periodo_seguro(periodo_str) do
-    case Date.from_iso8601("#{periodo_str}-01") do
-      {:ok, data} ->
-        data
-
-      {:error, _} ->
-        Date.utc_today() |> Date.beginning_of_month()
-    end
-  end
-
-  defp format_month_input(date), do: Calendar.strftime(date, "%Y-%m")
 
   defp format_weekday(date) do
     case Calendar.strftime(date, "%a") do
@@ -360,12 +344,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   defp reload_timesheet_and_close_absence(socket, message) do
-    employee_id = socket.assigns.employee_id
-    date = parse_periodo_seguro(socket.assigns.mes_selecionado)
+    current_date = Date.new!(socket.assigns.year, socket.assigns.month, 1)
 
     socket
     |> put_flash(:info, message)
     |> assign(absence_form: nil, absence_date: nil)
-    |> load_timesheet(employee_id, date)
+    |> load_timesheet(socket.assigns.employee_id, current_date)
   end
 end
