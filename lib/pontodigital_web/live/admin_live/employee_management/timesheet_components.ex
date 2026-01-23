@@ -16,7 +16,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.TimesheetComponents do
 
   def period_filter(assigns) do
     current_year = Date.utc_today().year
-    years = (current_year - 5)..(current_year + 2)
+    admission_date_year = assigns.employee.admission_date.year
+    years = admission_date_year..current_year
 
     months = [
       {1, "Janeiro"},

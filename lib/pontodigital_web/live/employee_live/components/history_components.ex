@@ -12,7 +12,8 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
 
   def filter_bar(assigns) do
     current_year = Date.utc_today().year
-    years = (current_year - 2)..(current_year + 1)
+    admission_date_year = assigns.employee.admission_date.year
+    years = admission_date_year..current_year
 
     months = [
       {1, "Janeiro"},

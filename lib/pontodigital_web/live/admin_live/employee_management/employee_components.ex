@@ -15,7 +15,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     ~H"""
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="flex-none">
-        <.back_button navigate={~p"/admin/"} />
+        <.link
+          navigate={~p"/admin/"}
+          class="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+        >
+          <.icon name="hero-arrow-left" class="size-4" /> Voltar para tela inicial
+        </.link>
       </div>
 
       <div class="w-full sm:max-w-md">
