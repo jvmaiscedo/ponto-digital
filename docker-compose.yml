@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: pontodigital_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: ecto://postgres:${POSTGRES_PASSWORD}@db/pontodigital_prod
+      PHX_HOST: localhost
+      PORT: 4000
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
