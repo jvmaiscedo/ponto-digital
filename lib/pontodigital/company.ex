@@ -37,7 +37,6 @@ defmodule Pontodigital.Company do
   end
 
   def list_employees_with_details(search_term \\ "") do
-    # Subquery para pegar o último clock_in de cada funcionário
     last_clock_query =
       from c in Pontodigital.Timekeeping.ClockIn,
         distinct: [asc: :employee_id],
@@ -65,7 +64,7 @@ defmodule Pontodigital.Company do
 
     user_preload_query =
       from u in Pontodigital.Accounts.User,
-        select: [:id, :email, :role]
+        select: [:id, :email, :role, :status]
 
     query
     |> Repo.all()

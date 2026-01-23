@@ -323,7 +323,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       >
         <.icon name="hero-calendar" class="size-5" />
       </.link>
-
       <.link
         navigate={~p"/admin/funcionarios/#{@employee.id}"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -333,15 +332,27 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
         <.icon name="hero-eye" class="size-5" />
       </.link>
 
-      <.link
-        phx-click={JS.push("desativar_funcionario", value: %{id: @employee.id})}
-        data-confirm="Tem certeza que deseja desativar este funcionário?"
-        class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        aria-label="Desativar Funcionario"
-        title="Desativar Funcionario"
-      >
-        <.icon name="hero-link" class="size-5" />
-      </.link>
+      <%= if @employee.user.status do %>
+        <.link
+          phx-click={JS.push("desativar_funcionario", value: %{id: @employee.id})}
+          data-confirm="Tem certeza que deseja desativar este funcionário?"
+          class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          aria-label="Desativar Funcionario"
+          title="Desativar Funcionario"
+        >
+          <.icon name="hero-link" class="size-5" />
+        </.link>
+      <% else %>
+        <.link
+          phx-click={JS.push("reativar_funcionario", value: %{id: @employee.id})}
+          data-confirm="Tem certeza que deseja reativar este funcionário?"
+          class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          aria-label="Reativar Funcionario"
+          title="Reativar Funcionario"
+        >
+          <.icon name="hero-arrow-uturn-left" class="size-5" />
+        </.link>
+      <% end %>
     </div>
     """
   end

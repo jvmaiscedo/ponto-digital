@@ -36,10 +36,35 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
     case Accounts.update_user_status(employee.user, %{status: false}) do
       {:ok, _} ->
-        {:noreply, put_flash(socket, :info, "Funcionário desativado com sucesso.")}
+        employees = Company.list_employees_with_details("")
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Funcionário desativado com sucesso.")
+         |> assign(:employees, employees)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao desativar funcionário.")}
+    end
+  end
+
+  @impl true
+  def handle_event("reativar_funcionario", %{"id" => id}, socket) do
+    employee =
+      Company.get_employee!(id)
+      |> Pontodigital.Repo.preload(:user)
+
+    case Accounts.update_user_status(employee.user, %{status: true}) do
+      {:ok, _} ->
+        employees = Company.list_employees_with_details("")
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Funcionário reativado com sucesso.")
+         |> assign(:employees, employees)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Erro ao reativar funcionário.")}
     end
   end
 
