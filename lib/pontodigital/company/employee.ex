@@ -2,6 +2,12 @@ defmodule Pontodigital.Company.Employee do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {
+    Flop.Schema,
+    filterable: [:full_name, :email, :position, :role, :status],
+    sortable: [:full_name, :email, :inserted_at, :role, :status]
+  }
+
   schema "employees" do
     field :full_name, :string
     field :position, :string

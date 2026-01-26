@@ -68,7 +68,8 @@ defmodule Pontodigital.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:tzdata, "~> 1.1"},
-      {:timex, "~> 3.7"}
+      {:timex, "~> 3.7"},
+      {:flop_phoenix, "~> 0.25.3"}
     ]
   end
 

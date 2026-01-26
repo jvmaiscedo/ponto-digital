@@ -24,16 +24,16 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Returns the list of employees.
+  Returns the list of employees with pagination.
 
   ## Examples
 
-      iex> list_employees()
-      [%Employee{}, ...]
+      iex> list_employees(%{page: 1, page_size: 10})
+      {:ok, {[%Employee{}, ...], %Flop.Meta{}}}
 
   """
-  def list_employees do
-    Repo.all(Employee)
+  def list_employees(params \\ %{}) do
+    Flop.validate_and_run(Employee, params, for: Employee)
   end
 
   def list_employees_with_details(search_term \\ "") do

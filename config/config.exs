@@ -79,3 +79,4 @@ import_config "#{config_env()}.exs"
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :tzdata, :autoupdate, :disabled
+config :flop, repo: Pontodigital.Repo, default_limit: 10
