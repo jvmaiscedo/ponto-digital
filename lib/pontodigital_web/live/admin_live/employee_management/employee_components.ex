@@ -6,6 +6,8 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
   alias Phoenix.LiveView.JS
   use PontodigitalWeb, :html
 
+  alias Flop.Phoenix, as: FlopUI
+
   @doc """
   Barra de busca e cabeçalho da listagem.
   """
@@ -13,92 +15,122 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
 
   def search_toolbar(assigns) do
     ~H"""
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div class="flex-none">
+    <div class="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex-none w-full sm:w-auto flex justify-start">
         <.link
           navigate={~p"/admin/"}
-          class="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+          class="group inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-brand-600 dark:text-zinc-400 dark:hover:text-brand-400 transition-colors"
         >
-          <.icon name="hero-arrow-left" class="size-4" /> Voltar para tela inicial
+          <div class="flex size-8 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-900/20 transition-colors">
+            <.icon name="hero-arrow-left" class="size-4" />
+          </div>
+          <span>Voltar</span>
         </.link>
       </div>
 
-      <div class="w-full sm:max-w-md">
+      <div class="w-full max-w-lg mx-auto">
         <form phx-change="search" onsubmit="return false;">
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <.icon name="hero-magnifying-glass" class="size-5 text-gray-400" />
+          <div class="relative group">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+              <.icon
+                name="hero-magnifying-glass"
+                class="size-5 text-zinc-400 group-focus-within:text-brand-500 transition-colors"
+              />
             </div>
             <input
               type="text"
               name="query"
               value={@search_term}
-              placeholder="Buscar por nome ou email..."
-              class="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 shadow-sm"
+              class="block w-full rounded-full border-0 py-2.5 pl-11 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-500 sm:text-sm sm:leading-6 dark:bg-zinc-800/50 dark:text-white dark:ring-zinc-700 dark:focus:ring-brand-500 transition-all"
+              placeholder="Pesquisar funcionários..."
               phx-debounce="300"
               autocomplete="off"
             />
           </div>
         </form>
       </div>
-      <div>
-        <PontodigitalWeb.Layouts.theme_toggle />
+
+      <div class="hidden sm:block flex-none w-auto sm:w-[88px]"></div>
+    </div>
+    """
+  end
+
+  @doc """
+  Tabela de listagem de funcionários usando o componente da biblioteca Flop.
+  """
+  attr :employees, :list, required: true
+  attr :meta, Flop.Meta, required: true
+
+  def employee_table(assigns) do
+    ~H"""
+    <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm flex flex-col">
+      <FlopUI.table
+        items={@employees}
+        meta={@meta}
+        path={~p"/admin/funcionarios"}
+        opts={[
+          table_attrs: [class: "min-w-full divide-y divide-gray-200 dark:divide-zinc-700"],
+          thead_attrs: [class: "bg-gray-50 dark:bg-zinc-900"],
+          thead_th_attrs: [
+            class:
+              "px-6 py-4 text-xs font-medium uppercase tracking-wider text-left text-gray-500 dark:text-zinc-400"
+          ],
+          tbody_attrs: [
+            class: "bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700",
+            id: "employees-stream",
+            "phx-update": "stream"
+          ],
+          tbody_tr_attrs: [class: "hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors"],
+          tbody_td_attrs: [
+            class: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+          ]
+        ]}
+      >
+        <:col :let={{_id, employee}} label="Nome" field={:full_name}>
+          <div class="flex items-center">
+            <span class="font-medium text-gray-900 dark:text-white">
+              {employee.full_name}
+            </span>
+          </div>
+        </:col>
+
+        <:col :let={{_id, employee}} label="Cargo" field={:position}>
+          {employee.position}
+        </:col>
+
+        <:col :let={{_id, employee}} label="E-mail" field={:email}>
+          {employee.user.email}
+        </:col>
+
+        <:col :let={{_id, employee}} label="Status" field={:status}>
+          <.status_badge status={employee.status} />
+        </:col>
+
+        <:col
+          :let={{_id, employee}}
+          label="Ações"
+          thead_th_attrs={[
+            class:
+              "px-6 py-4 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
+          ]}
+        >
+          <div class="flex justify-center">
+            <.action_buttons employee={employee} />
+          </div>
+        </:col>
+      </FlopUI.table>
+
+      <div class="p-4 border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 flex justify-center">
+        <FlopUI.pagination meta={@meta} path={~p"/admin/funcionarios"} />
       </div>
     </div>
     """
   end
 
-  @doc """
-  Tabela de funcionários.
-  """
-  attr :employees, :list, required: true
+  # --- Helpers e Componentes Auxiliares ---
 
-  def employee_table(assigns) do
-    ~H"""
-    <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-        <thead class="bg-gray-50 dark:bg-zinc-900">
-          <tr>
-            <.table_header>Nome</.table_header>
-            <.table_header>Cargo</.table_header>
-            <.table_header>E-mail</.table_header>
-            <.table_header>Status</.table_header>
-            <.table_header class="text-center">Ações</.table_header>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
-          <tr
-            :for={employee <- @employees}
-            class="hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors"
-          >
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-              {employee.full_name}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-300">
-              {employee.position}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-              {employee.user.email}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <.status_badge status={employee.status} />
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
-              <.action_buttons employee={employee} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
-  @doc """
-  Formulário completo de cadastro de funcionário.
-  """
   attr :form, :map, required: true
   attr :work_schedules, :list, default: []
-
   attr :action, :string, default: "/admin/"
 
   def employee_registration_form(assigns) do
@@ -234,36 +266,19 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
-  defp table_header(assigns) do
-    ~H"""
-    <th
-      scope="col"
-      class={[
-        "px-6 py-4 text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider",
-        assigns[:class] || "text-left"
-      ]}
-    >
-      {render_slot(@inner_block)}
-    </th>
-    """
-  end
+  attr :status, :atom, required: true
 
-  attr :status, :any, required: true
-
-  def status_badge(assigns) do
+  defp status_badge(assigns) do
     ~H"""
     <span class={[
       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
       status_class(@status)
     ]}>
-      {@status}
+      {status_label(@status)}
     </span>
     """
   end
 
-  @doc """
-  Modal específico para cadastro de férias.
-  """
   attr :employee, :map, required: true
   attr :form, :map, required: true
 
@@ -301,9 +316,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
-  attr :employee, :map, required: true
+  attr :employee, :any, required: true
 
-  def action_buttons(assigns) do
+  defp action_buttons(assigns) do
     ~H"""
     <div class="flex items-center justify-center gap-4">
       <.link
@@ -323,6 +338,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       >
         <.icon name="hero-calendar" class="size-5" />
       </.link>
+
       <.link
         navigate={~p"/admin/funcionarios/#{@employee.id}"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -357,15 +373,19 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     """
   end
 
-  defp status_class(status) when status in [:inativo, "inativo"] do
-    "bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-400/20"
-  end
+  defp status_class(status) when status in [:inativo, "inativo"],
+    do:
+      "bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-400/20"
 
-  defp status_class(status) when status in [:almoco, "almoco"] do
-    "bg-yellow-50 text-yellow-800 ring-yellow-600/10 dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-400/20"
-  end
+  defp status_class(status) when status in [:almoco, "almoco"],
+    do:
+      "bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-500 dark:ring-yellow-400/20"
 
-  defp status_class(_status) do
-    "bg-green-50 text-green-700 ring-green-600/10 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-400/20"
-  end
+  defp status_class(_),
+    do:
+      "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-400/20"
+
+  defp status_label(status) when status in [:inativo, "inativo"], do: "Inativo"
+  defp status_label(status) when status in [:almoco, "almoco"], do: "Em Almoço"
+  defp status_label(_), do: "Ativo"
 end

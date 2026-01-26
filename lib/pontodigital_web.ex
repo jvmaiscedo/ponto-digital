@@ -88,6 +88,7 @@ defmodule PontodigitalWeb do
       import Phoenix.HTML
       # Core UI components
       import PontodigitalWeb.CoreComponents
+      import Flop.Phoenix
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

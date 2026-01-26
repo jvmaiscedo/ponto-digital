@@ -1,5 +1,6 @@
 defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   use PontodigitalWeb, :live_view
+
   alias Pontodigital.Company
   alias Pontodigital.Accounts
   alias Pontodigital.Timekeeping
@@ -8,24 +9,23 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    employees = Company.list_employees_with_details("")
-
     {:ok,
      socket
-     |> assign(employees: employees)
+     |> stream(:employees, [])
      |> assign(search_term: "")
      |> assign(vacation_employee: nil)
      |> assign(vacation_form: nil)}
   end
 
   @impl true
-  def handle_event("search", %{"query" => query}, socket) do
-    filtered_employees = Company.list_employees_with_details(query)
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
 
-    {:noreply,
-     socket
-     |> assign(employees: filtered_employees)
-     |> assign(search_term: query)}
+  @impl true
+  def handle_event("search", %{"query" => query}, socket) do
+    params = if query == "", do: %{}, else: %{q: query}
+    {:noreply, push_patch(socket, to: ~p"/admin/funcionarios?#{params}")}
   end
 
   @impl true
@@ -36,12 +36,10 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
     case Accounts.update_user_status(employee.user, %{status: false}) do
       {:ok, _} ->
-        employees = Company.list_employees_with_details("")
-
         {:noreply,
          socket
          |> put_flash(:info, "Funcionário desativado com sucesso.")
-         |> assign(:employees, employees)}
+         |> push_patch(to: ~p"/admin/funcionarios")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao desativar funcionário.")}
@@ -56,12 +54,10 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
     case Accounts.update_user_status(employee.user, %{status: true}) do
       {:ok, _} ->
-        employees = Company.list_employees_with_details("")
-
         {:noreply,
          socket
          |> put_flash(:info, "Funcionário reativado com sucesso.")
-         |> assign(:employees, employees)}
+         |> push_patch(to: ~p"/admin/funcionarios")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao reativar funcionário.")}
@@ -97,7 +93,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
          socket
          |> put_flash(
            :info,
-           "Ferias registradas com sucesso para #{socket.assigns.vacation_employee.full_name}."
+           "Férias registradas com sucesso para #{socket.assigns.vacation_employee.full_name}."
          )
          |> assign(vacation_employee: nil, vacation_form: nil)}
 
@@ -106,9 +102,27 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
     end
   end
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  defp apply_action(socket, :index, params) do
+    flop_params = Map.put_new(params, "page_size", 10)
+
+    flop_params =
+      if Map.has_key?(params, "q") and params["q"] != "" do
+        Map.put(flop_params, "q", params["q"])
+      else
+        flop_params
+      end
+
+    case Company.list_employees_paginated(flop_params) do
+      {:ok, {employees, meta}} ->
+        socket
+        |> assign(:page_title, "Listagem de Funcionários")
+        |> assign(:meta, meta)
+        |> assign(:search_term, params["q"] || "")
+        |> stream(:employees, employees, reset: true)
+
+      {:error, _} ->
+        put_flash(socket, :error, "Erro ao carregar lista.")
+    end
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -117,9 +131,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
     |> assign(:employee, Company.get_employee!(id))
   end
 
-  defp apply_action(socket, :index, _params) do
+  defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "Listagem de Funcionários")
-    |> assign(:employee, nil)
+    |> assign(:page_title, "Novo Funcionário")
+    |> assign(:employee, %Company.Employee{})
   end
 end

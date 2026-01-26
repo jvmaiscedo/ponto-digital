@@ -24,57 +24,65 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Returns the list of employees with pagination.
-
-  ## Examples
-
-      iex> list_employees(%{page: 1, page_size: 10})
-      {:ok, {[%Employee{}, ...], %Flop.Meta{}}}
-
+  Constrói a query base para listagem, incluindo Joins e Filtros.
+  Não executa a query, apenas retorna o struct Ecto.Query.
   """
-  def list_employees(params \\ %{}) do
-    Flop.validate_and_run(Employee, params, for: Employee)
-  end
+  def list_employees_query(params \\ %{}) do
+    search_term = params["q"] || ""
 
-  def list_employees_with_details(search_term \\ "") do
     last_clock_query =
       from c in Pontodigital.Timekeeping.ClockIn,
         distinct: [asc: :employee_id],
         order_by: [asc: :employee_id, desc: :timestamp],
         select: %{employee_id: c.employee_id, type: c.type}
 
-    query =
+    base_query =
       from e in Employee,
+        as: :employee,
         join: u in assoc(e, :user),
+        as: :user,
         left_join: last_clock in subquery(last_clock_query),
         on: last_clock.employee_id == e.id,
-        order_by: [asc: e.full_name],
+        as: :last_clock,
         select: %{
           employee: e,
+          user: u,
           last_clock_type: last_clock.type
         }
 
-    query =
-      if search_term != "" do
-        term = "%#{search_term}%"
-        where(query, [e, u, _lc], ilike(e.full_name, ^term) or ilike(u.email, ^term))
-      else
-        query
-      end
+    if search_term != "" do
+      term = "%#{search_term}%"
 
-    user_preload_query =
-      from u in Pontodigital.Accounts.User,
-        select: [:id, :email, :role, :status]
+      from [employee: e, user: u] in base_query,
+        where: ilike(e.full_name, ^term) or ilike(u.email, ^term)
+    else
+      base_query
+    end
+  end
 
-    query
-    |> Repo.all()
-    |> Enum.map(fn %{employee: emp, last_clock_type: type} ->
-      status = derive_status(type)
+  @doc """
+  Executa a query paginada e processa o status em memória.
+  Substitui a antiga list_employees_with_details.
+  """
+  def list_employees_paginated(params \\ %{}) do
+    query = list_employees_query(params)
 
-      emp
-      |> Repo.preload(user: user_preload_query)
-      |> Map.put(:status, status)
-    end)
+    case Flop.validate_and_run(query, params, for: Employee) do
+      {:ok, {results, meta}} ->
+        employees_with_status =
+          Enum.map(results, fn %{employee: emp, user: user, last_clock_type: type} ->
+            status = derive_status(type)
+
+            emp
+            |> Map.put(:user, user)
+            |> Map.put(:status, status)
+          end)
+
+        {:ok, {employees_with_status, meta}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp derive_status(type) when type in [:entrada, :retorno_almoco], do: :ativo

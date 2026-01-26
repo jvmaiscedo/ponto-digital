@@ -1,7 +1,10 @@
 <div class="mx-auto max-w-6xl">
   <.search_toolbar search_term={@search_term} />
 
-  <.employee_table employees={@employees} />
+  <.employee_table 
+    employees={@streams.employees} 
+    meta={@meta} 
+  />
 </div>
 
 <.modal 
@@ -19,6 +22,7 @@
     patch={~p"/admin/funcionarios"} 
   />
 </.modal>
+
 <.vacation_modal 
   :if={@vacation_employee} 
   employee={@vacation_employee} 
