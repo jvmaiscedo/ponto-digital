@@ -1,8 +1,5 @@
-# --- ETAPA 1: BUILD ---
-# Usamos a tag exata: Elixir 1.17.3 + Erlang 27.1.2 + Alpine 3.20.3
 FROM hexpm/elixir:1.17.3-erlang-27.1.2-alpine-3.20.3 AS builder
 
-# Instala ferramentas necessárias para compilar
 RUN apk add --no-cache build-base git python3 curl
 
 WORKDIR /app
@@ -21,21 +18,16 @@ COPY lib/ lib/
 COPY priv/ priv/
 COPY assets/ assets/
 
-# Compilação na ordem correta
 RUN mix compile
 RUN mix assets.deploy
 RUN mix release
 
-# --- ETAPA 2: RUNNER ---
-# Usamos o Alpine 3.20.3 EXATO para combinar com o Builder acima
 FROM alpine:3.20.3 AS runner
 
-# Instala dependências de runtime
 RUN apk add --no-cache libstdc++ openssl ncurses-libs curl tar xz
 
 WORKDIR /app
 
-# Instalação do Typst
 RUN curl -fL -o typst.tar.xz https://github.com/typst/typst/releases/download/v0.11.0/typst-x86_64-unknown-linux-musl.tar.xz \
     && tar -xf typst.tar.xz \
     && mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/ \

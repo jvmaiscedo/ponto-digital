@@ -1,17 +1,13 @@
 defmodule Pontodigital.Reports.PdfGenerator do
   def generate(template_name, data) do
     template_dir = Application.app_dir(:pontodigital, "priv/templates/reports")
-
     temp_dir = Path.join(System.tmp_dir!(), "report_#{Ecto.UUID.generate()}")
-    File.mkdir_p!(temp_dir)
 
     try do
-      template_src = Path.join(template_dir, "#{template_name}.typ")
-      template_dest = Path.join(temp_dir, "#{template_name}.typ")
+      File.cp_r!(template_dir, temp_dir)
+
       json_dest = Path.join(temp_dir, "data.json")
       pdf_dest = Path.join(temp_dir, "#{template_name}.pdf")
-
-      File.cp!(template_src, template_dest)
 
       File.write!(json_dest, Jason.encode!(data))
 

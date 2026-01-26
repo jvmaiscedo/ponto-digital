@@ -1,65 +1,69 @@
-
 #set page(
   paper: "a4",
   margin: (x: 2cm, y: 2cm),
+  background: [
+    #place(center + horizon, image("uesb.jpg", width: 40%))
+    #place(center + horizon, rect(width: 100%, height: 100%, fill: white.transparentize(10%)))
+  ]
 )
+
 #set text(
   font: "Liberation Sans", 
   size: 10pt,
   lang: "pt"
 )
 
-
 #let data = json("data.json")
 
+#place(top + left, image("lindalva.jpeg", width: 3.5cm))
+
 #align(center)[
-  #text(16pt, weight: "bold")[ESPELHO DE PONTO] \
+  #text(14pt, weight: "bold", fill: luma(80))[#data.company_name] \
   #v(2mm)
-  #text(12pt)[#data.company_name] \
+  #text(18pt, weight: "black")[ESPELHO DE PONTO] \
+  #v(1mm)
+  #text(10pt, style: "italic")[Controle de Frequência]
 ]
 
-#line(length: 100%, stroke: 0.5pt + gray)
+#v(1.5cm)
+#line(length: 100%, stroke: 1pt + black)
 #v(5mm)
-
 
 #grid(
   columns: (1fr, 1fr),
   gutter: 1cm,
   [
-    *Funcionário:* #data.employee.name \
-    *Cargo:* #data.employee.position
+    #text(weight: "bold")[Funcionário:] #data.employee.name \
+    #v(2mm)
+    #text(weight: "bold")[Cargo:] #data.employee.position
   ],
   align(right)[
-    *Período:* #data.period \
-    *Emissão:* #data.emitted_at
+    #text(weight: "bold")[Período:] #data.period \
+    #v(2mm)
+    #text(weight: "bold")[Emissão:] #data.emitted_at
   ]
 )
 
 #v(1cm)
 
-
 #table(
   columns: (auto, 1fr, 1fr, 1fr, 1fr, 2fr),
   inset: 8pt,
-  align: (center + horizon, center + horizon, center + horizon, center + horizon, right + horizon, left + horizon),
+  align: (center + horizon, center + horizon, center + horizon, center + horizon, center + horizon, left + horizon),
   fill: (col, row) => if row == 0 { luma(230) } else { none },
   
-  // Cabeçalhos
   [*Data*], [*Entrada*], [*Almoço*], [*Saída*], [*Saldo*], [*Obs*],
 
-  // Linhas (Extraídas do JSON)
   ..data.days.map(d => (
     d.date,
     d.entry,
     d.lunch,
     d.exit,
-    // Condicional de cor para saldo negativo
-    text(fill: if d.balance.starts-with("-") { red } else { black })[#d.balance],
+    d.balance,
     text(size: 8pt, style: "italic")[#d.obs]
   )).flatten()
 )
 
-// --- TOTAIS ---
 #v(5mm)
 #align(right)[
   #block(
@@ -72,7 +76,6 @@
     ]
   )
 ]
-
 
 #place(
   bottom,
