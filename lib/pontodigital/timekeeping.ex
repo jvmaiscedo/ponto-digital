@@ -127,7 +127,6 @@ defmodule Pontodigital.Timekeeping do
   end
 
   defp validate_no_duplicates(employee_id, type) do
-    # Verificar se já existe registro deste tipo hoje
     today = Date.utc_today()
 
     query =
@@ -153,25 +152,82 @@ defmodule Pontodigital.Timekeeping do
     }
   end
 
-  defp validate_sequence(nil, :entrada), do: :ok
-  defp validate_sequence(%{type: :entrada}, type) when type in [:saida, :ida_almoco], do: :ok
-  defp validate_sequence(%{type: :ida_almoco}, :retorno_almoco), do: :ok
-  defp validate_sequence(%{type: :retorno_almoco}, :saida), do: :ok
-  defp validate_sequence(%{type: :saida}, :entrada), do: :ok
+  @doc """
+  Retorna uma lista de átomos com os tipos de registro permitidos no momento.
+  """
+  def get_allowed_types(employee_id) do
+    last_clock = get_last_clock_in_by_employee_id(employee_id)
 
-  defp validate_sequence(%{type: last_type}, _new_type) do
-    message = "Sequência inválida! Último registro: #{format_type(last_type)}"
-    {:error, :invalid_sequence, message}
+    if is_new_day?(last_clock) do
+      [:entrada]
+    else
+      case last_clock.type do
+        :entrada -> [:ida_almoco, :saida]
+        :ida_almoco -> [:retorno_almoco]
+        :retorno_almoco -> [:saida]
+        :saida -> [:entrada]
+        _ -> [:entrada]
+      end
+    end
   end
 
-  defp validate_sequence(nil, _type) do
-    {:error, :invalid_sequence, "Você deve fazer uma entrada primeiro."}
+  defp validate_sequence(nil, :entrada), do: :ok
+
+  defp validate_sequence(nil, _),
+    do: {:error, :invalid_sequence, "Você deve fazer uma entrada primeiro."}
+
+  defp validate_sequence(last_clock, new_type) do
+    is_new = is_new_day?(last_clock)
+
+    cond do
+      is_new and new_type == :entrada ->
+        :ok
+
+      is_new ->
+        {:error, :invalid_sequence,
+         "Novo dia detectado. O primeiro registro de hoje deve ser Entrada."}
+
+      true ->
+        validate_same_day_sequence(last_clock.type, new_type)
+    end
+  end
+
+  defp is_new_day?(nil), do: true
+
+  defp is_new_day?(last_clock) do
+    timezone = "America/Sao_Paulo"
+    {:ok, now} = DateTime.now(timezone)
+    today = DateTime.to_date(now)
+
+    {:ok, last_clock_local} = DateTime.shift_zone(last_clock.timestamp, timezone)
+    last_clock_date = DateTime.to_date(last_clock_local)
+
+    Date.compare(today, last_clock_date) == :gt
+  end
+
+  defp validate_same_day_sequence(:entrada, type) when type in [:saida, :ida_almoco],
+    do: :ok
+
+  defp validate_same_day_sequence(:ida_almoco, :retorno_almoco), do: :ok
+  defp validate_same_day_sequence(:retorno_almoco, :saida), do: :ok
+  defp validate_same_day_sequence(:saida, :entrada), do: :ok
+
+  defp validate_same_day_sequence(nil, :entrada), do: :ok
+
+  defp validate_same_day_sequence(nil, _),
+    do: {:error, :invalid_sequence, "Você deve fazer uma entrada primeiro."}
+
+  defp validate_same_day_sequence(last_type, _type) do
+    {:error, :invalid_sequence,
+     "Sequência inválida para hoje! O último registro foi: #{format_type(last_type)}"}
   end
 
   defp format_type(:entrada), do: "Entrada"
   defp format_type(:saida), do: "Saída"
   defp format_type(:ida_almoco), do: "Ida para Almoço"
   defp format_type(:retorno_almoco), do: "Retorno do Almoço"
+  defp format_type(nil), do: "Nenhum"
+  defp format_type(other), do: Atom.to_string(other)
 
   def list_timesheet(employee_id, year, month, timezone \\ "America/Sao_Paulo") do
     start_date = Date.new!(year, month, 1)

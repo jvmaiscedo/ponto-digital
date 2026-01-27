@@ -4,7 +4,11 @@ defmodule PontodigitalWeb.EmployeeLive.ClockIn do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    employee = socket.assigns.employee
+
+    allowed_types = Timekeeping.get_allowed_types(employee.id)
+
+    {:ok, assign(socket, :allowed_types, allowed_types)}
   end
 
   @impl true
@@ -13,15 +17,22 @@ defmodule PontodigitalWeb.EmployeeLive.ClockIn do
       case type_string do
         "entrada" -> :entrada
         "ida_almoco" -> :ida_almoco
-        "volta_almoco" -> :volta_almoco
+        "retorno_almoco" -> :retorno_almoco
         "saida" -> :saida
         _ -> nil
       end
 
     if type do
       case Timekeeping.register_clock_in(socket.assigns.employee.id, type) do
-        {:ok, _} ->
-          {:noreply, put_flash(socket, :info, "Ponto registrado com sucesso!")}
+        {:ok, _clock} ->
+          new_allowed = Timekeeping.get_allowed_types(socket.assigns.employee.id)
+
+          socket =
+            socket
+            |> put_flash(:info, "Ponto registrado com sucesso!")
+            |> assign(:allowed_types, new_allowed)
+
+          {:noreply, socket}
 
         {:error, :invalid_sequence, msg} ->
           {:noreply, put_flash(socket, :error, msg)}
