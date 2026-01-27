@@ -129,8 +129,15 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
       <.time_cell point={@day.points[:entrada]} type="entrada" faded={@day.is_weekend} />
       <.time_cell point={@day.points[:ida_almoco]} type="almoco" faded={@day.is_weekend} />
       <.time_cell point={@day.points[:retorno_almoco]} type="almoco" faded={@day.is_weekend} />
-      <.time_cell point={@day.points[:saida]} type="saida" faded={@day.is_weekend} />
-
+      <%= if is_nil(@day.points[:saida]) && inconsistent_day?(@day) do %>
+        <td class="px-4 py-2 whitespace-nowrap text-center bg-amber-50/50 dark:bg-amber-900/10">
+          <div class="tooltip tooltip-left" data-tip="Saída não registrada. Contate o admin.">
+            <.icon name="hero-exclamation-triangle" class="size-5 text-amber-500 mx-auto cursor-help" />
+          </div>
+        </td>
+      <% else %>
+        <.time_cell point={@day.points[:saida]} type="saida" faded={@day.is_weekend} />
+      <% end %>
       <td class="px-4 py-2 whitespace-nowrap text-right">
         <.balance_badge saldo={@day.saldo_visual} />
       </td>
@@ -287,5 +294,16 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
       6 -> "Sáb"
       7 -> "Dom"
     end
+  end
+
+  defp inconsistent_day?(day) do
+    today = Date.utc_today()
+    is_past = Date.compare(day.date, today) == :lt
+
+    has_activity = map_size(day.points) > 0
+
+    missing_exit = is_nil(day.points[:saida])
+
+    is_past and has_activity and missing_exit
   end
 end
