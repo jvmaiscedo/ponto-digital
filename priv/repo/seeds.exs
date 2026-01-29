@@ -76,3 +76,10 @@ upsert_schedule.(%{
   expected_start: nil,
   expected_end: nil
 })
+upsert_schedule.(%{
+  name: "Padrão 8h",
+  daily_hours: 8,
+  work_days: [1, 2, 3, 4, 5],
+  expected_start: nil,
+  expected_end: nil
+})
