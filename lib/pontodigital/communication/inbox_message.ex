@@ -13,7 +13,6 @@ defmodule Pontodigital.Communication.InboxMessage do
         :esquecimento,
         :problema_tecnico,
         :atestado_medico,
-        :hora_extra_autorizada,
         :outros
       ]
 

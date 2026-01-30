@@ -6,10 +6,12 @@
   <.form for={@form} phx-target={@myself} phx-change="validate" phx-submit="save">
     <div class="mb-4">
       <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Data Referência</label>
+      
+      <input type="hidden" name="inbox_message[context_date]" value={@context_date} />
+      
       <input 
-        type="date" 
-        name="inbox_message[context_date]" 
-        value={@context_date} 
+        type="text" 
+        value={format_date_br(@context_date)} 
         readonly 
         class="mt-1 block w-full rounded-md border-zinc-300 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed" 
       />
@@ -18,8 +20,9 @@
     <div class="mb-4">
       <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo de Solicitação</label>
       <.input field={@form[:category]} type="select" options={[
-        {"Erro de Ponto (Esquecimento)", "erro_ponto"},
-        {"Atestado Médico (Anexar PDF)", "atestado"},
+        {"Esquecimento", "esquecimento"},
+        {"Problema técnico", "problema_tecnico"},
+        {"Atestado Médico (Anexar PDF)", "atestado_medico"},
         {"Outros", "outros"}
       ]} />
     </div>
