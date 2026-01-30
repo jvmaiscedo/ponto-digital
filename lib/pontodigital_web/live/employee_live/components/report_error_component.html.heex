@@ -31,11 +31,15 @@
       <.input field={@form[:content]} type="textarea" label="Descrição" placeholder="Explique o motivo do ajuste..." rows="3" />
     </div>
 
-    <div class="mb-6">
+   <div class="mb-6">
       <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Anexo (Opcional)</label>
       
-      <div class="p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors" phx-drop-target={@uploads.document.ref}>
+      <label 
+        class="block p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer" 
+        phx-drop-target={@uploads.document.ref}
+      >
         <p class="text-sm text-zinc-500 mb-2">Arraste seu PDF aqui ou clique para selecionar</p>
+        
         <.live_file_input upload={@uploads.document} class="hidden" />
         
         <%= for entry <- @uploads.document.entries do %>
@@ -59,7 +63,7 @@
             <%= error_to_string(err) %>
           </p>
         <% end %>
-      </div>
+      </label>
     </div>
 
     <div class="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
