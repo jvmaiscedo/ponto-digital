@@ -1,6 +1,7 @@
 defmodule Pontodigital.Reports.TimesheetData do
   alias Pontodigital.{Timekeeping, Repo}
 
+
   def build(employee, month, year) do
     employee = Repo.preload(employee, :work_schedule)
 
@@ -19,6 +20,69 @@ defmodule Pontodigital.Reports.TimesheetData do
       total_balance: report.formatted_total,
       days: Enum.map(report.days, &format_day/1)
     }
+  end
+
+def build_weekly_payload(employee, month, year) do
+    employee = Repo.preload(employee, :work_schedule)
+
+    target_date = Date.new!(year, month, 1)
+
+
+    report_data = Timekeeping.get_monthly_report(employee, target_date)
+
+   days_of_month = Enum.filter(report_data.days, fn day ->
+      day.date.month == month
+    end)
+
+    weeks = group_days_by_week(days_of_month)
+
+    %{
+      company_name: "Universidade Estadual do Sudoeste da Bahia - UESB",
+      period_month: "#{format_month(month)}",
+      period_year: "#{year}",
+      emitted_at: Calendar.strftime(Date.utc_today(), "%d/%m/%Y"),
+      employee: %{
+        name: employee.full_name,
+        position: employee.position || "Discente",
+      },
+      weeks: weeks
+    }
+  end
+
+  defp group_days_by_week(days) do
+    days
+    |> Enum.chunk_by(fn day ->
+      {year, week} = Date.to_erl(day.date) |> :calendar.iso_week_number()
+      {year, week}
+    end)
+    |> Enum.filter(fn week_days ->
+      Enum.any?(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
+    end)
+    |> Enum.with_index(1)
+    |> Enum.map(fn {week_days, index} ->
+      business_days = Enum.filter(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
+
+      start_date = List.first(business_days).date
+      end_date = List.last(business_days).date
+
+      total_minutes_week = Enum.reduce(week_days, 0, fn day, acc ->
+        acc + (day.saldo_minutos || 0)
+      end)
+
+      %{
+        label: "#{index}ª SEMANA",
+        period: "#{Calendar.strftime(start_date, "%d/%m")} a #{Calendar.strftime(end_date, "%d/%m")}",
+        total_hours: format_peti_hours(total_minutes_week)
+      }
+    end)
+  end
+
+  defp format_peti_hours(0), do: ""
+  defp format_peti_hours(minutes) do
+    hours = div(abs(minutes), 60)
+    mins = rem(abs(minutes), 60)
+    formatted = "#{String.pad_leading(to_string(hours), 2, "0")}:#{String.pad_leading(to_string(mins), 2, "0")}"
+    if minutes < 0, do: "" , else: formatted
   end
 
   defp format_day(day) do

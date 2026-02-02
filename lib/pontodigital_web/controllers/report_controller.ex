@@ -15,7 +15,7 @@ defmodule PontodigitalWeb.ReportController do
 
       month = String.to_integer(month)
       year = String.to_integer(year)
-      data = TimesheetData.build(employee, month, year)
+      data = define_payload(employee, month, year)
 
       case PdfGenerator.generate(template_name, data) do
         {:ok, pdf_binary} ->
@@ -61,7 +61,16 @@ defmodule PontodigitalWeb.ReportController do
     case employee.work_schedule.name do
       "Padrão 8h" -> "timesheet"
       "Estagio Lindalva" -> "intern_timesheet"
+      "PETI" -> "peti_timesheet"
       _ -> "timesheet"
+    end
+  end
+  defp define_payload(employee, month, year) do
+    case employee.work_schedule.name do
+     "Padrão 8h" -> TimesheetData.build(employee, month, year)
+    "Estagio Cetep" -> TimesheetData.build(employee, month, year)
+    "PETI" -> TimesheetData.build_weekly_payload(employee, month, year)
+    _ -> TimesheetData.build(employee, month, year)
     end
   end
 end
