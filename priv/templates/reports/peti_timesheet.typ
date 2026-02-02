@@ -15,7 +15,7 @@
 
 #let data = json("data.json")
 
-// --- 1. Cabeçalho Compacto ---
+// --- 1. Cabeçalho ---
 #align(center)[
   #image("peti.jpeg", width: 80%) 
 ]
@@ -42,13 +42,22 @@
 #grid(
   columns: (auto, 1fr, auto, auto),
   gutter: 5pt,
-  align: horizon,
+  align: horizon, 
   
   text(weight: "bold")[DISCENTE:], 
-  [#data.employee.name #line(length: 100%, stroke: 0.5pt)],
+  
+  align(bottom)[
+    #box(
+      width: 100%,                
+      stroke: (bottom: 0.5pt + black), 
+      inset: (bottom: 2pt)        
+    )[
+      #data.employee.name
+    ]
+  ],
+  
   [#text(weight: "bold")[MÊS:] #data.period_month / #data.period_year]
 )
-
 #v(4pt)
 
 #grid(
@@ -92,9 +101,18 @@
       #text(size: 8pt)[#w.period]
     ],
     
-    // Altura mantida em 2.0cm para equilíbrio
-    align(left)[
-       #v(2.0cm) 
+    // CÉLULA DE RESUMO (Ajuste Final)
+    align(left + top)[
+       // Altura de 1.85cm: Garante que o corte aconteça ANTES de tocar a borda (inset 5pt ajuda também)
+       // clip: true garante que nada vaze
+       #block(height: 1.85cm, clip: true, breakable: false)[
+         #text(size: 8pt)[ // Mantido 8pt (não diminui mais)
+           #if w.summary != none and w.summary.len() > 0 [
+             // Lista compacta
+             #list(marker: [•], indent: 0pt, body-indent: 3pt, tight: true, ..w.summary)
+           ]
+         ]
+       ]
     ],
 
     [*#w.total_hours*],
@@ -110,7 +128,6 @@
 
 // --- 4. Assinatura e Rodapé ---
 
-// CORREÇÃO: width: 100% e align(center) explícito
 #block(breakable: false, width: 100%)[
   #align(center)[
     #line(length: 60%, stroke: 0.5pt)

@@ -49,7 +49,7 @@ def build_weekly_payload(employee, month, year) do
     }
   end
 
-  defp group_days_by_week(days) do
+defp group_days_by_week(days) do
     days
     |> Enum.chunk_by(fn day ->
       {year, week} = Date.to_erl(day.date) |> :calendar.iso_week_number()
@@ -62,6 +62,7 @@ def build_weekly_payload(employee, month, year) do
     |> Enum.map(fn {week_days, index} ->
       business_days = Enum.filter(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
 
+
       start_date = List.first(business_days).date
       end_date = List.last(business_days).date
 
@@ -69,10 +70,20 @@ def build_weekly_payload(employee, month, year) do
         acc + (day.saldo_minutos || 0)
       end)
 
+
+      weekly_summary =
+        week_days
+        |> Enum.map(fn day ->
+          if day.daily_log, do: day.daily_log.description, else: nil
+        end)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.reject(&(&1 == ""))
+
       %{
         label: "#{index}ª SEMANA",
         period: "#{Calendar.strftime(start_date, "%d/%m")} a #{Calendar.strftime(end_date, "%d/%m")}",
-        total_hours: format_peti_hours(total_minutes_week)
+        total_hours: format_peti_hours(total_minutes_week),
+        summary: weekly_summary
       }
     end)
   end
