@@ -65,6 +65,13 @@ defmodule PontodigitalWeb.EmployeeLive.Components.ReportErrorComponent do
     assign(socket, :form, to_form(changeset))
   end
 
+  defp format_date_br(date_str) do
+    case String.split(date_str, "-") do
+      [year, month, day] -> "#{day}/#{month}/#{year}"
+      _ -> date_str
+    end
+  end
+
   def error_to_string(:too_large), do: "Arquivo muito grande (Máx 5MB)"
   def error_to_string(:not_accepted), do: "Apenas arquivos PDF são aceitos"
   def error_to_string(_), do: "Erro no upload"

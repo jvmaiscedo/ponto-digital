@@ -46,3 +46,18 @@
     />
   </div>
 </div>
+<%= if @report_modal do %>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+    
+    <div class="absolute inset-0" phx-click="close_modal"></div>
+
+    <div class="relative z-10 w-full max-w-lg animate-in zoom-in-95 duration-200">
+      <.live_component 
+        module={PontodigitalWeb.EmployeeLive.Components.ReportErrorComponent} 
+        id="report-error-modal" 
+        context_date={@report_modal.date} 
+        employee_id={@employee.id} 
+      />
+    </div>
+  </div>
+<% end %>

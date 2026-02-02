@@ -129,21 +129,52 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
       <.time_cell point={@day.points[:entrada]} type="entrada" faded={@day.is_weekend} />
       <.time_cell point={@day.points[:ida_almoco]} type="almoco" faded={@day.is_weekend} />
       <.time_cell point={@day.points[:retorno_almoco]} type="almoco" faded={@day.is_weekend} />
-      <%= if is_nil(@day.points[:saida]) && inconsistent_day?(@day) do %>
-        <td class="px-4 py-2 whitespace-nowrap text-center bg-amber-50/50 dark:bg-amber-900/10">
-          <div class="tooltip tooltip-left" data-tip="Saída não registrada. Contate o admin.">
-            <.icon name="hero-exclamation-triangle" class="size-5 text-amber-500 mx-auto cursor-help" />
-          </div>
-        </td>
-      <% else %>
-        <.time_cell point={@day.points[:saida]} type="saida" faded={@day.is_weekend} />
-      <% end %>
+
+      <.time_cell point={@day.points[:saida]} type="saida" faded={@day.is_weekend} />
+
       <td class="px-4 py-2 whitespace-nowrap text-right">
         <.balance_badge saldo={@day.saldo_visual} />
       </td>
 
       <td class="px-4 py-2 text-left align-middle">
         <div class="flex items-center gap-2">
+          <%= if is_nil(@day.points[:saida]) && inconsistent_day?(@day) do %>
+            <div class="tooltip tooltip-left" data-tip="Ponto incompleto. Clique para ajustar.">
+              <button
+                type="button"
+                phx-click="open_report_modal"
+                phx-value-date={@day.date}
+                class="group relative"
+              >
+                <.icon
+                  name="hero-exclamation-triangle-mini"
+                  class="size-5 text-amber-500 hover:text-amber-600 transition-colors"
+                />
+                <span class="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75">
+                  </span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+              </button>
+            </div>
+          <% end %>
+
+          <%= if absent_work_day?(@day) do %>
+            <div class="tooltip tooltip-left" data-tip="Falta registrada. Enviar atestado?">
+              <button
+                type="button"
+                phx-click="open_report_modal"
+                phx-value-date={@day.date}
+                class="group"
+              >
+                <.icon
+                  name="hero-document-plus-mini"
+                  class="size-5 text-rose-500 hover:text-rose-600 transition-colors"
+                />
+              </button>
+            </div>
+          <% end %>
+
           <%= if @day.daily_log do %>
             <div class="group relative inline-flex">
               <span class="cursor-help text-indigo-600 dark:text-indigo-400">
@@ -305,5 +336,18 @@ defmodule PontodigitalWeb.EmployeeLive.Components.HistoryComponents do
     missing_exit = is_nil(day.points[:saida])
 
     is_past and has_activity and missing_exit
+  end
+
+  defp absent_work_day?(day) do
+    is_past = Date.compare(day.date, Date.utc_today()) == :lt
+
+    no_points =
+      Enum.all?([:entrada, :ida_almoco, :retorno_almoco, :saida], fn k ->
+        is_nil(day.points[k])
+      end)
+
+    no_justification = is_nil(day.ferias) and is_nil(day.feriado) and is_nil(day.abono)
+
+    is_past and not day.is_weekend and no_points and no_justification
   end
 end

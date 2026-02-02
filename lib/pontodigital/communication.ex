@@ -68,8 +68,12 @@ defmodule Pontodigital.Communication do
   end
 
   def mark_as_read(%InboxMessage{} = message) do
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
     message
-    |> Ecto.Changeset.change(read_at: DateTime.utc_now())
+    |> Ecto.Changeset.change(read_at: now)
     |> Repo.update()
   end
 end

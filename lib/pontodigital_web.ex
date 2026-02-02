@@ -17,7 +17,7 @@ defmodule PontodigitalWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt uploads)
 
   def router do
     quote do
@@ -88,7 +88,7 @@ defmodule PontodigitalWeb do
       import Phoenix.HTML
       # Core UI components
       import PontodigitalWeb.CoreComponents
-      import Flop.Phoenix
+      import Flop.Phoenix, except: [table: 1]
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
