@@ -16,8 +16,8 @@
 #let data = json("data.json")
 
 // --- 1. Cabeçalho ---
-#align(center)[
-  #image("peti.jpeg", width: 80%) 
+#align(left)[
+  #image("peti.png", width: 80%) 
 ]
 
 #v(1mm)
