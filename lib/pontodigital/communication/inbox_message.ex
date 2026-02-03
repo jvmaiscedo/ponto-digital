@@ -2,6 +2,12 @@ defmodule Pontodigital.Communication.InboxMessage do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Flop.Schema,
+    filterable: [:category, :read_at, :content, :context_date],
+    sortable: [:inserted_at, :context_date, :category, :read_at],
+    default_limit: 10,
+    default_order: %{order_by: [:inserted_at], order_directions: [:desc]}
+}
   schema "inbox_messages" do
     field :content, :string
     field :context_date, :date

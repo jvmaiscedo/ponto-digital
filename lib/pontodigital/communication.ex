@@ -7,10 +7,10 @@ defmodule Pontodigital.Communication do
   @doc """
   Returns the list of inbox_messsages.
   """
-  def list_inbox_messages do
+  def list_inbox_messages(params \\ %{}) do
     InboxMessage
-    |> Repo.all()
-    |> Repo.preload(:employee)
+    |> preload(:employee)
+    |> Flop.validate_and_run(params, for: InboxMessage)
   end
 
   @doc """

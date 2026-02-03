@@ -1,8 +1,30 @@
-<.header>
-  Caixa de Entrada
-  <:subtitle>Gerencie as solicitações e comunicados dos funcionários.</:subtitle>
-</.header>
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div>
+        <div class="mb-6">
+    <.link
+      navigate={~p"/admin"}
+      class="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+    >
+      <.icon name="hero-arrow-left" class="size-4" />
+      Voltar
+    </.link>
+  </div>
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-zinc-100">
+          Caixa de Entrada
+        </h1>
+        <p class="text-sm text-gray-500 dark:text-zinc-400">
+          Gerencie as solicitações e comunicados dos funcionários.
+        </p>
+      </div>
+    </div>
+  </div>
 
-<div class="mt-8">
- <InboxComponents.messages_table messages={@streams.messages} />
+  <div class="overflow-hidden rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-gray-200 dark:border-zinc-700">
+    <InboxComponents.messages_table 
+      messages={@streams.messages} 
+      meta={@meta} 
+    />
+  </div>
 </div>

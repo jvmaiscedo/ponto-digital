@@ -6,12 +6,23 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    messages = Communication.list_inbox_messages()
+    {:ok, socket
+    |> assign( :page_title, "Caixa de Entrada")
+  |> stream(:messages, [])}
+  end
 
-    {:ok,
-     socket
-     |> assign(:page_title, "Caixa de Entrada")
-     |> stream(:messages, messages)}
+  @impl true
+  def handle_params(params, _url, socket) do
+    case Communication.list_inbox_messages(params) do
+      {:ok, {messages, meta}} ->
+        {:noreply,
+         socket
+         |> assign(:meta, meta)
+         |> stream(:messages, messages, reset: true)}
+
+      {:error, _meta} ->
+        {:noreply, push_navigate(socket, to: ~p"/admin/inbox")}
+    end
   end
 
   @impl true
@@ -20,14 +31,21 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.Index do
 
     case Communication.mark_as_read(message) do
       {:ok, updated_message} ->
+        updated_message = Pontodigital.Repo.preload(updated_message, :employee)
         {:noreply,
          socket
          |> put_flash(:info, "Mensagem marcada como lida.")
-         |> stream_insert(:messages, updated_message)}
+         |> stream(:messages, updated_message)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao atualizar mensagem.")}
     end
+  end
+
+  @impl true
+  def handle_event("update-filter", params, socket) do
+    params = Map.delete(params, "_target")
+    {:noreply, push_patch(socket, to: ~p"/admin/inbox?#{params}")}
   end
 
   def format_date(date) do
