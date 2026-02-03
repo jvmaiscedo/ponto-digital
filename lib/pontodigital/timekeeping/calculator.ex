@@ -8,7 +8,7 @@ defmodule Pontodigital.Timekeeping.Calculator do
 
   @doc """
   Calcula o saldo de um dia específico baseado em todas as variáveis (Pontos, Meta, Abonos, Feriados).
-  Retorna: {saldo_minutos, status_formatado}
+  Retorna: {saldo_minutos, status_formatado, trabalhado_minutos}
   """
   def calculate_daily_balance(pontos, meta_diaria, abono, feriado_nome, vacation) do
     do_calculate(pontos, meta_diaria, abono, feriado_nome, vacation)
@@ -42,26 +42,25 @@ defmodule Pontodigital.Timekeeping.Calculator do
 
   # funcoes privadas
   defp do_calculate(_points, _meta, _abono, _feriado, %Vacation{}) do
-    {0, "FÉRIAS"}
+    {0, "FÉRIAS", 0}
   end
 
   defp do_calculate(_pontos, _meta, _abono, feriado_nome, nil) when not is_nil(feriado_nome) do
-    {0, "FERIADO"}
+    {0, "FERIADO", 0}
   end
 
   defp do_calculate(_pontos, _meta, %Absence{}, _feriado_nome, nil) do
-    {0, "ABONADO"}
+    {0, "ABONADO", 0}
   end
 
   defp do_calculate(pontos, meta, nil, nil, nil) do
     case calculate_worked_minutes(pontos) do
       {:ok, trabalhados} ->
         saldo = trabalhados - meta
-        {saldo, format_balance(saldo)}
+        {saldo, format_balance(saldo), trabalhados}
 
       :error ->
-        # se o  ponto nao estiver completo, o chamador decide a penalidade
-        {:missing_records, -meta}
+        {:missing_records, -meta, 0}
     end
   end
 

@@ -58,16 +58,20 @@ defp group_days_by_week(days) do
     |> Enum.filter(fn week_days ->
       Enum.any?(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
     end)
+    |> Enum.filter(fn week_days ->
+      Enum.any?(week_days, &is_business_day?/1)
+    end)
     |> Enum.with_index(1)
     |> Enum.map(fn {week_days, index} ->
-      business_days = Enum.filter(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
+      valid_business_days = Enum.filter(week_days, fn day ->
+        is_business_day?(day)
+      end)
 
-
-      start_date = List.first(business_days).date
-      end_date = List.last(business_days).date
+      start_date = List.first(valid_business_days).date
+      end_date = List.last(valid_business_days).date
 
       total_minutes_week = Enum.reduce(week_days, 0, fn day, acc ->
-        acc + (day.saldo_minutos || 0)
+        acc + (day.trabalhado_minutos || 0)
       end)
 
 
@@ -88,6 +92,9 @@ defp group_days_by_week(days) do
     end)
   end
 
+  defp is_business_day?(day) do
+    Date.day_of_week(day.date) <= 5 and is_nil(day.feriado)
+  end
   defp format_peti_hours(0), do: ""
   defp format_peti_hours(minutes) do
     hours = div(abs(minutes), 60)

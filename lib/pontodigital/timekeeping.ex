@@ -593,7 +593,7 @@ defmodule Pontodigital.Timekeeping do
       vacation = Map.get(context.vacations, date)
       daily_log = Map.get(context.daily_logs, date)
 
-      {balance_minutes, balance_visual} =
+      {balance_minutes, balance_visual, worked_minutes} =
         calculate_day_balance(points, daily_meta, absence, holiday, vacation, employee, date)
 
       %{
@@ -605,6 +605,7 @@ defmodule Pontodigital.Timekeeping do
         daily_log: daily_log,
         saldo_minutos: balance_minutes,
         saldo_visual: balance_visual,
+        trabalhado_minutos: worked_minutes,
         is_weekend: weekend?(date)
       }
     end)
@@ -618,21 +619,21 @@ defmodule Pontodigital.Timekeeping do
     result = Calculator.calculate_daily_balance(points, meta, absence, holiday, vacation)
 
     case result do
-      {:missing_records, default_debit} ->
-        resolve_missing_records(default_debit, employee, date, holiday, vacation)
+      {:missing_records, default_debit, default_worked} ->
+        resolve_missing_records(default_debit, default_worked, employee, date, holiday, vacation)
 
       result_ok ->
         result_ok
     end
   end
 
-  defp resolve_missing_records(debit, employee, date, holiday, vacation) do
+  defp resolve_missing_records(debit, worked,employee, date, holiday, vacation) do
     case should_charge_absence?(employee, date, holiday, vacation) do
       true ->
-        {debit, Calculator.format_balance(debit)}
+        {debit, Calculator.format_balance(debit), worked}
 
       false ->
-        {0, "--:--"}
+        {0, "--:--", 0}
     end
   end
 
