@@ -1,0 +1,45 @@
+<div>
+  <.header>
+    <%= @title %>
+    <:subtitle>Gerencie as configurações da jornada de trabalho.</:subtitle>
+  </.header>
+
+  <.simple_form
+    for={@form}
+    id="work-schedule-form"
+    phx-target={@myself}
+    phx-change="validate"
+    phx-submit="save"
+  >
+    <.input field={@form[:name]} type="text" label="Nome da Jornada" />
+    <.input field={@form[:daily_hours]} type="number" label="Carga Horária Diária (Horas)" step="1" />
+    
+    <div class="flex gap-4">
+      <.input field={@form[:expected_start]} type="time" label="Início Previsto" />
+      <.input field={@form[:expected_end]} type="time" label="Fim Previsto" />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="block text-sm font-semibold leading-6 text-zinc-800">Dias de Trabalho</label>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <%= for {label, value} <- PontodigitalWeb.AdminLive.WorkScheduleManagement.WorkScheduleComponents.days_options() do %>
+          <label class="flex items-center gap-2 cursor-pointer border p-2 rounded hover:bg-zinc-50">
+            <input 
+              type="checkbox" 
+              name="work_schedule[work_days][]" 
+              value={value} 
+              checked={value in (@form[:work_days].value || [])}
+              class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            />
+            <span class="text-sm"><%= label %></span>
+          </label>
+        <% end %>
+      </div>
+      <.error :for={msg <- @form[:work_days].errors}><%= translate_error(msg) %></.error>
+    </div>
+
+    <:actions>
+      <.button phx-disable-with="Salvando...">Salvar Jornada</.button>
+    </:actions>
+  </.simple_form>
+</div>

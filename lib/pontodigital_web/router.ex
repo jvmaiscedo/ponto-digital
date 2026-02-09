@@ -64,6 +64,9 @@ defmodule PontodigitalWeb.Router do
       live "/feriados", AdminLive.HolidayManagement.Index
       live "/inbox", AdminLive.InboxLive.Index, :index
       live "/inbox/:id", AdminLive.InboxLive.Show, :show
+      live "/jornadas", AdminLive.WorkScheduleManagement.Index, :index
+      live "/jornadas/nova", AdminLive.WorkScheduleManagement.Index, :new
+      live "/jornadas/:id/editar", AdminLive.WorkScheduleManagement.Index, :edit
     end
 
     get "/relatorios/espelho", ReportController, :timesheet
