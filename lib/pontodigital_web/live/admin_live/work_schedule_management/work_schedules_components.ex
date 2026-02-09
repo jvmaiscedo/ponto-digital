@@ -1,97 +1,132 @@
 defmodule PontodigitalWeb.AdminLive.WorkScheduleManagement.WorkScheduleComponents do
   use PontodigitalWeb, :html
+  alias Phoenix.LiveView.JS
 
   @doc """
-  Cabeçalho da página com título e ações, similar ao de funcionários.
+  Barra de ferramentas superior com botão de voltar e ação principal.
   """
-  attr :title, :string, required: true
-  attr :subtitle, :string, default: nil
-  slot :actions
-
-  def page_header(assigns) do
+def toolbar(assigns) do
     ~H"""
-    <div class="md:flex md:items-center md:justify-between mb-8">
-      <div class="min-w-0 flex-1">
-        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight dark:text-zinc-100">
-          <%= @title %>
-        </h2>
-        <p :if={@subtitle} class="mt-2 text-sm text-gray-500 dark:text-zinc-400">
-          <%= @subtitle %>
-        </p>
-      </div>
-      <div class="mt-4 flex md:ml-4 md:mt-0">
-        <%= render_slot(@actions) %>
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div class="flex-none w-full sm:w-auto flex flex-col justify-start gap-4">
+          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-zinc-100">
+            Jornadas de Trabalho
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-zinc-400">
+            Gerencie os turnos e escalas.
+          </p>
+        </div>
+
+
+      <div class="flex items-center gap-2">
+        <.link patch={~p"/admin/jornadas/nova"}>
+          <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2">
+            <.icon name="hero-plus" class="size-4" />
+            Nova Jornada
+          </button>
+        </.link>
       </div>
     </div>
     """
   end
 
   @doc """
-  Badge estilizado para os dias da semana.
+  Tabela de jornadas estilizada.
   """
-  attr :days, :list, required: true
+  attr :work_schedules, :list, required: true
 
-  def work_days_badge(assigns) do
+  def schedule_table(assigns) do
     ~H"""
-    <div class="flex flex-wrap gap-1">
-      <%= if @days == [] or is_nil(@days) do %>
-        <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20">
-          Nenhum dia definido
-        </span>
-      <% else %>
-        <%= for day <- format_days_list(@days) do %>
-          <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
-            <%= day %>
-          </span>
-        <% end %>
+    <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm flex flex-col">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+        <thead class="bg-gray-50 dark:bg-zinc-900">
+          <tr>
+            <th scope="col" class="px-6 py-4 text-xs font-medium uppercase tracking-wider text-left text-gray-500 dark:text-zinc-400">
+              Nome
+            </th>
+            <th scope="col" class="whitespace-nowrap px-6 py-4 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400">
+              Carga Diária
+            </th>
+            <th scope="col" class="whitespace-nowrap px-6 py-4 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400">
+              Horário
+            </th>
+            <th scope="col" class="whitespace-nowrap px-2 py-4 text-xs font-medium uppercase tracking-wider text-left text-gray-500 dark:text-zinc-400">
+              Dias
+            </th>
+            <th scope="col" class="whitespace-nowrap px-6 py-4 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400">
+              Ações
+            </th>
+          </tr>
+        </thead>
+        <tbody id="work_schedules" phx-update="stream" class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
+          <tr :for={{id, work_schedule} <- @work_schedules} id={id} class="hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+              <%= work_schedule.name %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+              <%= work_schedule.daily_hours %>h
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+              <%= work_schedule.expected_start %> - <%= work_schedule.expected_end %>
+            </td>
+
+            <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <.work_days_badge days={work_schedule.work_days} />
+            </td>
+
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+              <.action_buttons work_schedule={work_schedule} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <%= if @work_schedules == [] do %>
+        <div class="p-8 text-center text-gray-500 dark:text-zinc-400 text-sm">
+          Nenhuma jornada cadastrada.
+        </div>
       <% end %>
     </div>
     """
   end
 
-  @doc """
-  Botão de ação com ícone (Editar/Excluir).
-  """
-  attr :navigate, :string, default: nil
-  attr :click, :string, default: nil
-  attr :confirm, :string, default: nil
-  attr :icon, :string, required: true
-  attr :label, :string, required: true
-  attr :color, :string, default: "text-gray-400 hover:text-gray-500"
+  attr :work_schedule, :any, required: true
 
-  def action_button(assigns) do
+  defp action_buttons(assigns) do
     ~H"""
-    <%= if @navigate do %>
-      <.link navigate={@navigate} class={["group flex items-center p-1 transition-colors", @color]} title={@label}>
-        <.icon name={@icon} class="size-5" />
-        <span class="sr-only"><%= @label %></span>
+    <div class="flex items-center justify-center gap-4">
+      <.link
+        patch={~p"/admin/jornadas/#{@work_schedule.id}/editar"}
+        class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        title="Editar"
+      >
+        <.icon name="hero-pencil-square" class="size-5" />
       </.link>
-    <% else %>
-      <button type="button" phx-click={@click} data-confirm={@confirm} class={["group flex items-center p-1 transition-colors", @color]} title={@label}>
-        <.icon name={@icon} class="size-5" />
-        <span class="sr-only"><%= @label %></span>
-      </button>
-    <% end %>
+
+      <.link
+        phx-click={JS.push("delete", value: %{id: @work_schedule.id})}
+        data-confirm="Tem certeza que deseja excluir esta jornada?"
+        class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+        title="Excluir"
+      >
+        <.icon name="hero-trash" class="size-5" />
+      </.link>
+    </div>
     """
   end
 
-  @doc """
-  Tabela estilizada (Wrapper).
-  """
-  slot :inner_block
-
-  def styled_table_wrapper(assigns) do
+  def work_days_badge(assigns) do
     ~H"""
-    <div class="mt-8 flow-root">
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg bg-white dark:bg-zinc-900 dark:ring-white/10">
-            <table class="min-w-full divide-y divide-gray-300 dark:divide-zinc-700">
-              <%= render_slot(@inner_block) %>
-            </table>
-          </div>
-        </div>
-      </div>
+    <div class="flex flex-nowrap gap-1">
+      <%= if @days == [] or is_nil(@days) do %>
+        <span class="text-xs text-gray-400">-</span>
+      <% else %>
+        <%= for day <- format_days_list(@days) do %>
+          <span class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
+            <%= day %>
+          </span>
+        <% end %>
+      <% end %>
     </div>
     """
   end
@@ -101,10 +136,7 @@ defmodule PontodigitalWeb.AdminLive.WorkScheduleManagement.WorkScheduleComponent
       1 => "Seg", 2 => "Ter", 3 => "Qua", 4 => "Qui",
       5 => "Sex", 6 => "Sáb", 7 => "Dom"
     }
-
-    days
-    |> Enum.sort()
-    |> Enum.map(&Map.get(day_map, &1))
+    days |> Enum.sort() |> Enum.map(&Map.get(day_map, &1))
   end
 
   def days_options do

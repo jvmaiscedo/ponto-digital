@@ -1,95 +1,31 @@
-<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-  <div class="mb-6">
+<div class="mx-auto max-w-6xl">
+  <div >
     <.link
-      navigate={~p"/admin"}
-      class="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
-    >
-      <.icon name="hero-arrow-left" class="size-4" />
-      Voltar
-    </.link>
-  </div>
-  <.page_header title="Jornadas de Trabalho" subtitle="Gerencie os horários e escalas de trabalho da empresa.">
-    <:actions>
-      <.link patch={~p"/admin/jornadas/nova"}>
-        <.button>
-          <.icon name="hero-plus" class="mr-1 size-4" />
-          Nova Jornada
-        </.button>
-      </.link>
-    </:actions>
-  </.page_header>
-
-  <.styled_table_wrapper>
-    <thead class="bg-gray-50 dark:bg-zinc-800">
-      <tr>
-        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 dark:text-zinc-100">
-          Nome
-        </th>
-        
-        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 dark:text-zinc-100">
-          Carga Diária
-        </th>
-        
-        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 dark:text-zinc-100">
-          Horário Previsto
-        </th>
-        
-        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-zinc-100">
-          Dias de Trabalho
-        </th>
-        
-        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 dark:text-zinc-100">
-          Ações
-        </th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900" id="work_schedules" phx-update="stream">
-      <tr :for={{id, work_schedule} <- @streams.work_schedules} id={id} class="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 dark:text-zinc-100">
-          <%= work_schedule.name %>
-        </td>
-        
-        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center dark:text-zinc-400">
-          <%= work_schedule.daily_hours %>h
-        </td>
-        
-        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center dark:text-zinc-400">
-          <%= work_schedule.expected_start %> - <%= work_schedule.expected_end %>
-        </td>
-        
-        <td class="px-3 py-4 text-sm text-gray-500 dark:text-zinc-400">
-          <.work_days_badge days={work_schedule.work_days} />
-        </td>
-        
-        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-          <div class="flex items-center justify-end gap-2">
-            <.action_button
-              navigate={~p"/admin/jornadas/#{work_schedule}/editar"}
-              icon="hero-pencil-square"
-              label="Editar"
-              color="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-            />
-            <.action_button
-              click={JS.push("delete", value: %{id: work_schedule.id}) |> hide("##{id}")}
-              confirm="Tem certeza que deseja excluir esta jornada? Isso pode afetar o cálculo de horas dos funcionários vinculados."
-              icon="hero-trash"
-              label="Excluir"
-              color="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-            />
+          navigate={~p"/admin/"}
+          class="group inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-brand-600 dark:text-zinc-400 dark:hover:text-brand-400 transition-colors"
+        >
+          <div class="flex size-8 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-900/20 transition-colors">
+            <.icon name="hero-arrow-left" class="size-4" />
           </div>
-        </td>
-      </tr>
-    </tbody>
-  </.styled_table_wrapper>
-
-  <.modal :if={@live_action in [:new, :edit]} id="work-schedule-modal" show on_cancel={JS.patch(~p"/admin/jornadas")}>
-    <.live_component
-      module={PontodigitalWeb.AdminLive.WorkScheduleManagement.FormComponent}
-      id={@work_schedule.id || :new}
-      title={@page_title}
-      action={@live_action}
-      work_schedule={@work_schedule}
-      patch={~p"/admin/jornadas"}
-    />
-  </.modal>
+          <span>Voltar</span>
+        </.link>
+  </div>
+  <.toolbar />
+  <.schedule_table work_schedules={@streams.work_schedules} />
 </div>
+
+<.modal 
+  :if={@live_action in [:new, :edit]} 
+  id="work-schedule-modal" 
+  show 
+  on_cancel={JS.patch(~p"/admin/jornadas")}
+>
+  <.live_component
+    module={PontodigitalWeb.AdminLive.WorkScheduleManagement.FormComponent}
+    id={@work_schedule.id || :new}
+    title={@page_title}
+    action={@live_action}
+    work_schedule={@work_schedule}
+    patch={~p"/admin/jornadas"}
+  />
+</.modal>
