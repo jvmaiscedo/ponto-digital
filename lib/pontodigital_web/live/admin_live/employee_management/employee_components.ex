@@ -245,17 +245,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
 
             <div class="sm:col-span-3">
               <.input
-                field={@form[:position]}
-                type="text"
-                label="Cargo"
-                placeholder="Ex: Desenvolvedor"
-                phx-debounce="500"
-                required
-              />
-            </div>
-
-            <div class="sm:col-span-3">
-              <.input
                 field={@form[:admission_date]}
                 type="date"
                 label="Data de Admissão"
