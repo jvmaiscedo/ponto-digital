@@ -10,11 +10,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
   def mount(_params, _session, socket) do
     changeset = Company.change_employee(%Employee{})
     work_schedules = Company.list_work_schedules()
+    departments = Company.list_departments()
 
     {:ok,
      socket
      |> assign(form: to_form(changeset))
-     |> assign(work_schedules: work_schedules)}
+     |> assign(work_schedules: work_schedules)
+     |>assign(departments: departments)}
   end
 
   # Validação

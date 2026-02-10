@@ -143,6 +143,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
 
   attr :form, :map, required: true
   attr :work_schedules, :list, default: []
+  attr :departments, :list, default: []
   attr :action, :string, default: "/admin/"
 
   def employee_registration_form(assigns) do
@@ -217,6 +218,27 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
                 label="Nome Completo"
                 placeholder="Ex: João da Silva"
                 phx-debounce="500"
+                required
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <.input
+                field={@form[:position]}
+                type="text"
+                label="Cargo"
+                placeholder="Ex: Desenvolvedor"
+                phx-debounce="500"
+                required
+              />
+            </div>
+            <div class="sm:col-span-3">
+               <.input
+                field={@form[:department_id]}
+                type="select"
+                label="Departamento"
+                prompt="Selecione um departamento"
+                options={Enum.map(@departments, &{&1.name, &1.id})}
                 required
               />
             </div>

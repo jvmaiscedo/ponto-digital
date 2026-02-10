@@ -22,7 +22,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
         <.input field={@form[:full_name]} type="text" label="Nome Completo" />
 
         <.input field={@form[:position]} type="text" label="Cargo / Posição" />
-
+      <.input
+          field={@form[:department_id]}
+          type="select"
+          label="Departamento"
+          options={Enum.map(@departments, &{&1.name, &1.id})}
+          prompt="Selecione um departamento"
+        />
         <:actions>
           <.button phx-disable-with="Salvando...">Salvar Alterações</.button>
         </:actions>
@@ -34,9 +40,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
   @impl true
   def update(%{employee: employee} = assigns, socket) do
     changeset = Company.change_employee_for_admin(employee)
+
+    departments = Company.list_departments()
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:departments, departments)
      |> assign_form(changeset)}
   end
 
