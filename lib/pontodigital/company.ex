@@ -4,6 +4,7 @@ defmodule Pontodigital.Company do
   """
 
   import Ecto.Query, warn: false
+  alias Pontodigital.Company.Department
   alias Pontodigital.Repo
   alias Pontodigital.Company.Employee
   alias Ecto.Multi
@@ -27,7 +28,7 @@ defmodule Pontodigital.Company do
   Constrói a query base para listagem, incluindo Joins e Filtros.
   Não executa a query, apenas retorna o struct Ecto.Query.
   """
-  def list_employees_query(params \\ %{}) do
+  def list_employees_query(department_id, params \\ %{}) do
     search_term = params["q"] || ""
 
     last_clock_query =
@@ -44,6 +45,7 @@ defmodule Pontodigital.Company do
         left_join: last_clock in subquery(last_clock_query),
         on: last_clock.employee_id == e.id,
         as: :last_clock,
+        where: e.department_id == ^department_id,
         select: %{
           employee: e,
           user: u,
@@ -64,8 +66,8 @@ defmodule Pontodigital.Company do
   Executa a query paginada e processa o status em memória.
   Substitui a antiga list_employees_with_details.
   """
-  def list_employees_paginated(params \\ %{}) do
-    query = list_employees_query(params)
+  def list_employees_paginated(department_id, params \\ %{}) do
+    query = list_employees_query(department_id, params)
 
     case Flop.validate_and_run(query, params, for: Employee) do
       {:ok, {results, meta}} ->
@@ -223,5 +225,13 @@ defmodule Pontodigital.Company do
 
   def change_work_schedule(%WorkSchedule{} = work_schedule, attrs \\ %{}) do
     WorkSchedule.changeset(work_schedule, attrs)
+  end
+
+  def list_departments do
+    Repo.all(Department)
+  end
+
+  def get_department!(id) do
+    Repo.get!(Department, id)
   end
 end

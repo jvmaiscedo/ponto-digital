@@ -19,6 +19,7 @@ defmodule Pontodigital.Company.Employee do
 
     belongs_to :user, Pontodigital.Accounts.User
     belongs_to :work_schedule, Pontodigital.Company.WorkSchedule
+    belongs_to :department, Pontodigital.Company.Department
     has_many :clock_ins, Pontodigital.Timekeeping.ClockIn
 
     field :email, :string, virtual: true
@@ -40,10 +41,12 @@ defmodule Pontodigital.Company.Employee do
       :email,
       :password,
       :role,
-      :work_schedule_id
+      :work_schedule_id,
+      :department_id
     ])
     |> validate_required([:full_name, :position, :admission_date, :email, :password, :role])
     |> foreign_key_constraint(:work_schedule_id)
+    |> foreign_key_constraint(:department_id)
   end
 
   def admin_update_changeset(employee, attrs) do
