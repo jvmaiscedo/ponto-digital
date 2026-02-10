@@ -12,7 +12,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
         <:subtitle>Use este formulário para gerenciar os registros dos funcionários.</:subtitle>
       </.header>
 
-      <.simple_form
+     <.simple_form
         for={@form}
         id="employee-form"
         phx-target={@myself}
@@ -22,13 +22,23 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
         <.input field={@form[:full_name]} type="text" label="Nome Completo" />
 
         <.input field={@form[:position]} type="text" label="Cargo / Posição" />
-      <.input
+
+        <.input
           field={@form[:department_id]}
           type="select"
           label="Departamento"
           options={Enum.map(@departments, &{&1.name, &1.id})}
           prompt="Selecione um departamento"
         />
+
+        <.input
+          field={@form[:work_schedule_id]}
+          type="select"
+          label="Jornada de Trabalho"
+          options={Enum.map(@work_schedules, &{&1.name, &1.id})}
+          prompt="Selecione a jornada"
+        />
+
         <:actions>
           <.button phx-disable-with="Salvando...">Salvar Alterações</.button>
         </:actions>
@@ -42,10 +52,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
     changeset = Company.change_employee_for_admin(employee)
 
     departments = Company.list_departments()
+    work_schedules = Company.list_work_schedules()
     {:ok,
      socket
      |> assign(assigns)
      |> assign(:departments, departments)
+     |> assign(:work_schedules, work_schedules)
      |> assign_form(changeset)}
   end
 
