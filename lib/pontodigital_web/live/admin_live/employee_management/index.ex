@@ -29,7 +29,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   @impl true
   def handle_event("search", %{"query" => query}, socket) do
     params = if query == "", do: %{}, else: %{q: query}
-    {:noreply, push_patch(socket, to: ~p"/admin/funcionarios?#{params}")}
+    {:noreply, push_patch(socket, to: ~p"/admin/gestao-pessoas/funcionarios?#{params}")}
   end
 
   @impl true
@@ -43,7 +43,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Funcionário desativado com sucesso.")
-         |> push_patch(to: ~p"/admin/funcionarios")}
+         |> push_patch(to: ~p"/admin/gestao-pessoas/funcionarios")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao desativar funcionário.")}
@@ -61,7 +61,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Funcionário reativado com sucesso.")
-         |> push_patch(to: ~p"/admin/funcionarios")}
+         |> push_patch(to: ~p"/admin/gestao-pessoas/funcionarios")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao reativar funcionário.")}

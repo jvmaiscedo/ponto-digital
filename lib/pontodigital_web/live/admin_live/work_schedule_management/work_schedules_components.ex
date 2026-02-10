@@ -19,7 +19,7 @@ def toolbar(assigns) do
 
 
       <div class="flex items-center gap-2">
-        <.link patch={~p"/admin/jornadas/nova"}>
+        <.link patch={~p"/admin/configuracoes/jornadas/nova"}>
           <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2">
             <.icon name="hero-plus" class="size-4" />
             Nova Jornada
@@ -96,7 +96,7 @@ def toolbar(assigns) do
     ~H"""
     <div class="flex items-center justify-center gap-4">
       <.link
-        patch={~p"/admin/jornadas/#{@work_schedule.id}/editar"}
+        patch={~p"/admin/configuracoes/jornadas/#{@work_schedule.id}/editar"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         title="Editar"
       >

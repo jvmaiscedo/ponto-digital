@@ -1,160 +1,103 @@
-<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mr-2px px-4 md:px-8">
-      
-      <.link 
-        navigate={~p"/admin/metricas"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-purple-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-presentation-chart-line" class="h-6 w-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                Dashboard Geral
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Ver métricas e indicadores
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-purple-600 dark:text-purple-400 group-hover:underline">Acessar gráficos</span>
-          <.icon name="hero-chart-bar" class="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </.link>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 mr-2px px-4 md:px-8 max-w-7xl mx-auto">
 
-      <.link 
-        navigate={~p"/admin/feriados"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-orange-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-calendar" class="h-6 w-6 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-orange-600 dark:group-hover:text-orange-400">
-                Ajuste de calendário
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Adicionar feriados nacionais e locais
-              </p>
-            </div>
-          </div>
+  <.link 
+    navigate={~p"/admin/metricas"} 
+    class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-purple-500 hover:shadow-lg"
+  >
+    <div class="p-6">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-600/20 group-hover:scale-110 transition-transform">
+          <.icon name="hero-presentation-chart-line" class="h-6 w-6 text-purple-600 dark:text-purple-400" />
         </div>
-        
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-orange-600 dark:text-orange-400 group-hover:underline">Começar a gerência</span>
-          <.icon name="hero-plus" class="h-4 w-4 text-orange-600 dark:text-orange-400 group-hover:translate-x-1 transition-transform" />
+        <div>
+          <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-purple-600 dark:group-hover:text-purple-400">
+            Dashboard & Métricas
+          </h3>
+          <p class="text-sm text-zinc-500 dark:text-zinc-400">
+            Indicadores de desempenho e frequência
+          </p>
         </div>
-      </.link>
-      
-      <.link 
-        navigate={~p"/admin/jornadas"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-indigo-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-clock" class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                Jornadas de Trabalho
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Configurar turnos e escalas
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:underline">Gerenciar jornadas</span>
-          <.icon name="hero-arrow-right" class="h-4 w-4 text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </.link>
-
-
-      <.link 
-        navigate={~p"/admin/novo"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-emerald-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-user-plus" class="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                Registrar Novo
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Adicionar colaborador ao sistema
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-emerald-600 dark:text-emerald-400 group-hover:underline">Começar cadastro</span>
-          <.icon name="hero-plus" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </.link>
-
-      <.link 
-        navigate={~p"/admin/funcionarios"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-blue-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-list-bullet" class="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                Ver Funcionários
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Listagem completa e busca
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:underline">Acessar lista</span>
-          <.icon name="hero-arrow-right" class="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </.link>
-
-         <.link 
-        navigate={~p"/admin/inbox"} 
-        class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-yellow-500 hover:shadow-lg"
-      >
-        <div class="p-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20 ring-1 ring-purple-600/20 group-hover:scale-110 transition-transform">
-              <.icon name="hero-inbox-stack" class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-yellow-600 dark:group-hover:text-yellow-400">
-                Inbox
-              </h3>
-              <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                Ver solicitações dos funcionários para alterações de ponto e justificativa de faltas
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
-          <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400 group-hover:underline">Acessar mensagens</span>
-          <.icon name="hero-arrow-right" class="h-4 w-4 text-yellow-600 dark:text-yellow-400 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </.link>
-
+      </div>
     </div>
+    <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
+      <span class="text-sm font-medium text-purple-600 dark:text-purple-400 group-hover:underline">Visualizar gráficos</span>
+      <.icon name="hero-chart-bar" class="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </.link>
+
+  <.link 
+    navigate={~p"/admin/gestao-pessoas"} 
+    class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-blue-500 hover:shadow-lg"
+  >
+    <div class="p-6">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-600/20 group-hover:scale-110 transition-transform">
+          <.icon name="hero-users" class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            Gestão de Colaboradores
+          </h3>
+          <p class="text-sm text-zinc-500 dark:text-zinc-400">
+            Listagem, cadastro de novos e histórico
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
+      <span class="text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:underline">Gerenciar equipe</span>
+      <.icon name="hero-arrow-right" class="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </.link>
+
+  <.link 
+    navigate={~p"/admin/inbox"} 
+    class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-yellow-500 hover:shadow-lg"
+  >
+    <div class="p-6">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20 ring-1 ring-yellow-600/20 group-hover:scale-110 transition-transform">
+          <.icon name="hero-inbox-stack" class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-yellow-600 dark:group-hover:text-yellow-400">
+            Central de Solicitações
+          </h3>
+          <p class="text-sm text-zinc-500 dark:text-zinc-400">
+            Aprovações de ponto e justificativas
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
+      <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400 group-hover:underline">Ver pendências</span>
+      <.icon name="hero-envelope" class="h-4 w-4 text-yellow-600 dark:text-yellow-400 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </.link>
+
+  <.link 
+    navigate={~p"/admin/configuracoes"} 
+    class="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow ring-1 ring-gray-900/5 dark:ring-white/10 transition-all hover:ring-2 hover:ring-slate-500 hover:shadow-lg"
+  >
+    <div class="p-6">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-900/20 ring-1 ring-slate-600/20 group-hover:scale-110 transition-transform">
+          <.icon name="hero-cog-6-tooth" class="h-6 w-6 text-slate-600 dark:text-slate-400" />
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-slate-600 dark:group-hover:text-slate-400">
+            Parâmetros do Sistema
+          </h3>
+          <p class="text-sm text-zinc-500 dark:text-zinc-400">
+            Calendário, feriados e jornadas de trabalho
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 dark:bg-zinc-900/50 px-6 py-3 flex justify-between items-center">
+      <span class="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:underline">Acessar configurações</span>
+      <.icon name="hero-adjustments-horizontal" class="h-4 w-4 text-slate-600 dark:text-slate-400 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </.link>
+
+</div>

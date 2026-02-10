@@ -11,7 +11,7 @@
   :if={@live_action in [:new, :edit]} 
   id="employee-modal" 
   show 
-  on_cancel={JS.patch(~p"/admin/funcionarios")}
+  on_cancel={JS.patch(~p"/admin/gestao-pessoas/funcionarios")}
 >
   <.live_component 
     module={PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent} 
@@ -19,7 +19,7 @@
     title={@page_title} 
     action={@live_action} 
     employee={@employee} 
-    patch={~p"/admin/funcionarios"} 
+    patch={~p"/admin/gestao-pessoas/funcionarios"} 
   />
 </.modal>
 

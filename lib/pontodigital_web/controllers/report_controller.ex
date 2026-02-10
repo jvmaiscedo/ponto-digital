@@ -43,7 +43,7 @@ defmodule PontodigitalWeb.ReportController do
 
   defp path_to(user, target_id) do
     case user.role do
-      :admin -> ~p"/admin/funcionarios/:#{target_id}"
+      :admin -> ~p"/admin/gestao-pessoas/funcionarios/:#{target_id}"
       :employee -> ~p"/workspace/historico"
     end
   end

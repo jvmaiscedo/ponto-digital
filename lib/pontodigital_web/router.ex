@@ -56,17 +56,19 @@ defmodule PontodigitalWeb.Router do
         {PontodigitalWeb.UserAuth, :ensure_admin}
       ] do
       live "/", AdminLive.Index, :index
-      live "/funcionarios", AdminLive.EmployeeManagement.Index, :index
-      live "/funcionarios/:id", AdminLive.EmployeeManagement.Show, :show
-      live "/funcionarios/:id/editar", AdminLive.EmployeeManagement.Index, :edit
-      live "/novo", AdminLive.EmployeeManagement.New, :new
+      live "/gestao-pessoas", AdminLive.EmployeeManagement.Menu, :index
+      live "/gestao-pessoas/funcionarios", AdminLive.EmployeeManagement.Index, :index
+      live "/gestao-pessoas/funcionarios/:id", AdminLive.EmployeeManagement.Show, :show
+      live "/gestao-pessoas/funcionarios/:id/editar", AdminLive.EmployeeManagement.Index, :edit
+      live "/gestao-pessoas/novo", AdminLive.EmployeeManagement.New, :new
       live "/metricas", AdminLive.MetricsLive.Index, :index
-      live "/feriados", AdminLive.HolidayManagement.Index
+      live "/configuracoes", AdminLive.Settings.Index, :index
+      live "/configuracoes/feriados", AdminLive.HolidayManagement.Index
       live "/inbox", AdminLive.InboxLive.Index, :index
       live "/inbox/:id", AdminLive.InboxLive.Show, :show
-      live "/jornadas", AdminLive.WorkScheduleManagement.Index, :index
-      live "/jornadas/nova", AdminLive.WorkScheduleManagement.Index, :new
-      live "/jornadas/:id/editar", AdminLive.WorkScheduleManagement.Index, :edit
+      live "/configuracoes/jornadas", AdminLive.WorkScheduleManagement.Index, :index
+      live "/configuracoes/jornadas/nova", AdminLive.WorkScheduleManagement.Index, :new
+      live "/configuracoes/jornadas/:id/editar", AdminLive.WorkScheduleManagement.Index, :edit
     end
 
     get "/relatorios/espelho", ReportController, :timesheet

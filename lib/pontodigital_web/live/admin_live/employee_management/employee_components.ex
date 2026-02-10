@@ -18,7 +18,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     <div class="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex-none w-full sm:w-auto flex justify-start">
         <.link
-          navigate={~p"/admin/"}
+          navigate={~p"/admin/gestao-pessoas"}
           class="group inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-brand-600 dark:text-zinc-400 dark:hover:text-brand-400 transition-colors"
         >
           <div class="flex size-8 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-900/20 transition-colors">
@@ -67,7 +67,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       <FlopUI.table
         items={@employees}
         meta={@meta}
-        path={~p"/admin/funcionarios"}
+        path={~p"/admin/gestao-pessoas/funcionarios"}
         opts={[
           table_attrs: [class: "min-w-full divide-y divide-gray-200 dark:divide-zinc-700"],
           thead_attrs: [class: "bg-gray-50 dark:bg-zinc-900"],
@@ -132,7 +132,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       ">
         <FlopUI.pagination
           meta={@meta}
-          path={~p"/admin/funcionarios"}
+          path={~p"/admin/gestao-pessoas/funcionarios"}
         />
       </div>
     </div>
@@ -345,7 +345,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
     ~H"""
     <div class="flex items-center justify-center gap-4">
       <.link
-        patch={~p"/admin/funcionarios/#{@employee.id}/editar"}
+        patch={~p"/admin/gestao-pessoas/funcionarios/#{@employee.id}/editar"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         title="Editar"
       >
@@ -363,7 +363,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
       </.link>
 
       <.link
-        navigate={~p"/admin/funcionarios/#{@employee.id}"}
+        navigate={~p"/admin/gestao-pessoas/funcionarios/#{@employee.id}"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         aria-label="Ver Espelho"
         title="Ver Espelho"
