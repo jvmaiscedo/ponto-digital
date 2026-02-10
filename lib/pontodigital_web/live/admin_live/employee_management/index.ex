@@ -9,13 +9,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    user_id = socket.assigns.current_scope.user.id
 
-    admin_employee = Company.get_employee_by_user!(user_id)
+    current_employee = Company.get_employee_by_user(socket.assigns.current_scope.user.id)
 
     {:ok,
      socket
-     |> assign(:current_department_id, admin_employee.department_id)
+     |> assign(:current_employee, current_employee)
      |> stream(:employees, [])
      |> assign(search_term: "")
      |> assign(vacation_employee: nil)
@@ -117,7 +116,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
         flop_params
       end
 
-    case Company.list_employees_paginated(socket.assigns.current_department_id, flop_params) do
+    flop_params =
+      flop_params
+      |> Map.put("department_id", socket.assigns.current_employee.department_id)
+      |> Map.put("exclude_id", socket.assigns.current_employee.id)
+    case Company.list_employees_paginated(flop_params) do
       {:ok, {employees, meta}} ->
         socket
         |> assign(:page_title, "Listagem de Funcionários")

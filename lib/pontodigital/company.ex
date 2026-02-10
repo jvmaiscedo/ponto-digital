@@ -28,8 +28,11 @@ defmodule Pontodigital.Company do
   Constrói a query base para listagem, incluindo Joins e Filtros.
   Não executa a query, apenas retorna o struct Ecto.Query.
   """
-  def list_employees_query(department_id, params \\ %{}) do
+  def list_employees_query(params \\ %{}) do
     search_term = params["q"] || ""
+
+    department_id = params["department_id"]
+    exclude_id = params["exclude_id"]
 
     last_clock_query =
       from c in Pontodigital.Timekeeping.ClockIn,
@@ -52,13 +55,20 @@ defmodule Pontodigital.Company do
           last_clock_type: last_clock.type
         }
 
+    query =
+      if exclude_id do
+        from [employee: e] in base_query, where: e.id != ^exclude_id
+      else
+        base_query
+      end
+
     if search_term != "" do
       term = "%#{search_term}%"
 
-      from [employee: e, user: u] in base_query,
+      from [employee: e, user: u] in query,
         where: ilike(e.full_name, ^term) or ilike(u.email, ^term)
     else
-      base_query
+      query
     end
   end
 
@@ -66,8 +76,8 @@ defmodule Pontodigital.Company do
   Executa a query paginada e processa o status em memória.
   Substitui a antiga list_employees_with_details.
   """
-  def list_employees_paginated(department_id, params \\ %{}) do
-    query = list_employees_query(department_id, params)
+  def list_employees_paginated(params \\ %{}) do
+    query = list_employees_query(params)
 
     case Flop.validate_and_run(query, params, for: Employee) do
       {:ok, {results, meta}} ->
