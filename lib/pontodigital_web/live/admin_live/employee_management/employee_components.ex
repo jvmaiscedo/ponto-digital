@@ -241,6 +241,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
                 options={Enum.map(@departments, &{&1.name, &1.id})}
                 required
               />
+              <div>
+            <.input
+      field={@form[:set_as_manager]}
+      type="checkbox"
+      label="Definir como gerente do departamento."
+    />
+            </div>
             </div>
 
             <div class="sm:col-span-3">

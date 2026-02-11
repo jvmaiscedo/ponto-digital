@@ -30,7 +30,11 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
           options={Enum.map(@departments, &{&1.name, &1.id})}
           prompt="Selecione um departamento"
         />
-
+        <.input
+          field={@form[:set_as_manager]}
+          type="checkbox"
+          label="Definir este funcionário como Gerente do Departamento selecionado"
+        />
         <.input
           field={@form[:work_schedule_id]}
           type="select"
@@ -76,9 +80,13 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
     save_employee(socket, socket.assigns.action, employee_params)
   end
 
-  defp save_employee(socket, :edit, employee_params) do
+ defp save_employee(socket, :edit, employee_params) do
     case Company.update_employee_as_admin(socket.assigns.employee, employee_params) do
       {:ok, employee} ->
+        if employee_params["set_as_manager"] == "true" && employee.department_id do
+          Company.set_department_manager(employee.department_id, employee.id)
+        end
+
         notify_parent({:saved, employee})
 
         {:noreply,
