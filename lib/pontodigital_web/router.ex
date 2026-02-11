@@ -69,6 +69,9 @@ defmodule PontodigitalWeb.Router do
       live "/configuracoes/jornadas", AdminLive.WorkScheduleManagement.Index, :index
       live "/configuracoes/jornadas/nova", AdminLive.WorkScheduleManagement.Index, :new
       live "/configuracoes/jornadas/:id/editar", AdminLive.WorkScheduleManagement.Index, :edit
+      live "/configuracoes/departamentos", AdminLive.DepartmentManagement.Index, :index
+      live "/configuracoes/departamentos/novo", AdminLive.DepartmentManagement.Index, :new
+      live "/configuracoes/departamentos/:id/editar", AdminLive.DepartmentManagement.Index, :edit
     end
 
     get "/relatorios/espelho", ReportController, :timesheet
