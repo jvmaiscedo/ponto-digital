@@ -3,14 +3,18 @@ defmodule PontodigitalWeb.AdminLive.DepartmentManagement.FormComponent do
 
   alias Pontodigital.Company
 
-  @impl true
+ @impl true
   def render(assigns) do
     ~H"""
     <div>
-      <.header>
-        <%= @title %>
-        <:subtitle>Use este formulário para gerenciar os departamentos.</:subtitle>
-      </.header>
+      <div class="px-4 sm:px-0 mb-6">
+        <h2 class="text-lg font-semibold leading-7 text-zinc-900 dark:text-zinc-100">
+          <%= @title %>
+        </h2>
+        <p class="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          Preencha os dados abaixo para atualizar a estrutura organizacional.
+        </p>
+      </div>
 
       <.simple_form
         for={@form}
@@ -18,19 +22,34 @@ defmodule PontodigitalWeb.AdminLive.DepartmentManagement.FormComponent do
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
+        class="mt-4"
       >
-        <.input field={@form[:name]} type="text" label="Nome do Departamento" />
-
         <.input
-          field={@form[:manager_id]}
-          type="select"
-          label="Gerente / Responsável"
-          options={Enum.map(@employees, &{&1.full_name, &1.id})}
-          prompt="Nenhum (ou selecionar depois)"
+          field={@form[:name]}
+          type="text"
+          label="Nome do Departamento"
+          placeholder="Ex: Recursos Humanos"
+          required
         />
 
+        <div class="mt-2">
+          <.input
+            field={@form[:manager_id]}
+            type="select"
+            label="Gerente Responsável"
+            options={Enum.map(@employees, &{&1.full_name, &1.id})}
+            prompt="Selecione um gestor (opcional)"
+            class="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+          />
+          <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Apenas funcionários com perfil administrativo aparecem aqui.
+          </p>
+        </div>
+
         <:actions>
-          <.button phx-disable-with="Salvando...">Salvar Departamento</.button>
+          <.button phx-disable-with="Salvando..." class="w-full sm:w-auto">
+            Salvar Alterações
+          </.button>
         </:actions>
       </.simple_form>
     </div>
