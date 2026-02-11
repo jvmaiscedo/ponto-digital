@@ -8,9 +8,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   import PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents
 
   @impl true
-  def mount(_params, _session, socket) do
+def mount(_params, _session, socket) do
+    user_id = socket.assigns.current_scope.user.id
 
-    current_employee = Company.get_employee_by_user(socket.assigns.current_scope.user.id)
+    current_employee =
+      Company.get_employee_by_user(user_id)
+      |> Pontodigital.Repo.preload([:department, :user])
 
     {:ok,
      socket
@@ -109,6 +112,9 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
   defp apply_action(socket, :index, params) do
     flop_params = Map.put_new(params, "page_size", 10)
 
+    current_employee = socket.assigns.current_employee
+    is_master = current_employee.user.role == :master
+
     flop_params =
       if Map.has_key?(params, "q") and params["q"] != "" do
         Map.put(flop_params, "q", params["q"])
@@ -117,9 +123,18 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Index do
       end
 
     flop_params =
-      flop_params
-      |> Map.put("department_id", socket.assigns.current_employee.department_id)
-      |> Map.put("exclude_id", socket.assigns.current_employee.id)
+      if is_master do
+        if params["department_id"] && params["department_id"] != "" do
+          Map.put(flop_params, "department_id", params["department_id"])
+        else
+          flop_params
+        end
+      else
+        Map.put(flop_params, "department_id", current_employee.department_id)
+      end
+
+    flop_params = Map.put(flop_params, "exclude_id", current_employee.id)
+
     case Company.list_employees_paginated(flop_params) do
       {:ok, {employees, meta}} ->
         socket

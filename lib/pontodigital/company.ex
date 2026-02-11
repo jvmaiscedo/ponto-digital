@@ -44,10 +44,10 @@ defmodule Pontodigital.Company do
   Constrói a query base para listagem, incluindo Joins e Filtros.
   Não executa a query, apenas retorna o struct Ecto.Query.
   """
-  def list_employees_query(params \\ %{}) do
+ def list_employees_query(params \\ %{}) do
     search_term = params["q"] || ""
 
-    department_id = params["department_id"]
+    department_id = if params["department_id"] in ["", nil], do: nil, else: params["department_id"]
     exclude_id = params["exclude_id"]
 
     last_clock_query =
@@ -64,7 +64,6 @@ defmodule Pontodigital.Company do
         left_join: last_clock in subquery(last_clock_query),
         on: last_clock.employee_id == e.id,
         as: :last_clock,
-        where: e.department_id == ^department_id,
         select: %{
           employee: e,
           user: u,
@@ -72,10 +71,17 @@ defmodule Pontodigital.Company do
         }
 
     query =
-      if exclude_id do
-        from [employee: e] in base_query, where: e.id != ^exclude_id
+      if department_id do
+        from [employee: e] in base_query, where: e.department_id == ^department_id
       else
         base_query
+      end
+
+    query =
+      if exclude_id do
+        from [employee: e] in query, where: e.id != ^exclude_id
+      else
+        query
       end
 
     if search_term != "" do

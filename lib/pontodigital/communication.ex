@@ -7,20 +7,28 @@ defmodule Pontodigital.Communication do
   @doc """
   Returns the list of inbox_messsages.
   """
-  def list_inbox_messages(params \\ %{}, current_employee) do
+def list_inbox_messages(params \\ %{}, current_employee) do
+    current_employee = Pontodigital.Repo.preload(current_employee, :user)
+
     base_query =
       InboxMessage
       |> preload(employee: :department)
 
     query =
-      if current_employee.department && current_employee.department.name == "Geral" do
-        base_query
-      else
-        base_query
-        |> join(:inner, [m], e in assoc(m, :employee))
-        |> join(:inner, [m, e], d in assoc(e, :department))
-        |> where([m, e, d], d.manager_id == ^current_employee.id)
+      cond do
+        current_employee.user.role == :master ->
+          base_query
+
+        current_employee.user.role == :admin ->
+          base_query
+          |> join(:inner, [m], e in assoc(m, :employee))
+          |> join(:inner, [m, e], d in assoc(e, :department))
+          |> where([m, e, d], d.manager_id == ^current_employee.id)
+
+        true ->
+          base_query |> where([m], is_nil(m.id))
       end
+
     Flop.validate_and_run(query, params, for: InboxMessage)
   end
 

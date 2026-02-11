@@ -249,7 +249,7 @@ defmodule PontodigitalWeb.UserAuth do
   def on_mount(:ensure_admin, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_scope.user && socket.assigns.current_scope.user.role == :admin do
+    if socket.assigns.current_scope.user && socket.assigns.current_scope.user.role in [:admin, :master] do
       {:cont, socket}
     else
       socket =
@@ -292,6 +292,7 @@ defmodule PontodigitalWeb.UserAuth do
   # O usuário já está logado, redireciona para a nova área de trabalho
   def signed_in_path(user) do
     case user.role do
+      :master -> ~p"/admin/"
       :admin -> ~p"/admin/"
       :employee -> ~p"/workspace"
     end
@@ -338,7 +339,7 @@ defmodule PontodigitalWeb.UserAuth do
     user = conn.assigns.current_scope.user
 
     case user do
-      %{role: :admin} ->
+      %{role: role} when role in [:admin, :master] ->
         conn
 
       _ ->

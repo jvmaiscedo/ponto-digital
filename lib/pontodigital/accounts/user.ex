@@ -8,7 +8,7 @@ defmodule Pontodigital.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
-    field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
+    field :role, Ecto.Enum, values: [:employee, :admin, :master], default: :employee
     field :status, :boolean
 
     has_one :employee, Pontodigital.Company.Employee
