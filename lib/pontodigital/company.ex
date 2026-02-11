@@ -10,6 +10,7 @@ defmodule Pontodigital.Company do
   alias Ecto.Multi
   alias Pontodigital.Accounts
   alias Pontodigital.Company.WorkSchedule
+  alias Pontodigital.Company.Department
 
   def register_employee_with_user(attrs) do
     Multi.new()
@@ -21,7 +22,22 @@ defmodule Pontodigital.Company do
       |> Map.put("user_id", user.id)
       |> create_employee()
     end)
+    |> Multi.run(:set_manager, fn repo, %{employee: employee} ->
+      set_manager_transaction(repo, employee, attrs)
+    end)
     |> Repo.transaction()
+  end
+
+  defp set_manager_transaction(repo, employee, attrs) do
+    should_set_manager = attrs["set_as_manager"] == "true" || attrs[:set_as_manager] == true
+
+    if should_set_manager && employee.department_id do
+      repo.get!(Department, employee.department_id)
+      |> Ecto.Changeset.change(manager_id: employee.id)
+      |> repo.update()
+    else
+      {:ok, nil}
+    end
   end
 
   @doc """
@@ -97,10 +113,19 @@ defmodule Pontodigital.Company do
     end
   end
 
+
   defp derive_status(type) when type in [:entrada, :retorno_almoco], do: :ativo
   defp derive_status(:ida_almoco), do: :almoco
   defp derive_status(_), do: :inativo
 
+def list_admin_employees do
+    from(e in Employee,
+      join: u in assoc(e, :user),
+      where: u.role == :admin,
+      preload: [:user]
+    )
+    |> Repo.all()
+  end
   def change_employee_for_admin(employee, attrs \\ %{}) do
     Employee.admin_update_changeset(employee, attrs)
   end
@@ -237,11 +262,56 @@ defmodule Pontodigital.Company do
     WorkSchedule.changeset(work_schedule, attrs)
   end
 
+@doc """
+  Retorna um %Ecto.Changeset{} para rastrear alterações no departamento.
+  """
+  def change_department(%Department{} = department, attrs \\ %{}) do
+    Department.changeset(department, attrs)
+  end
+
+  def create_department(attrs \\ %{}) do
+  %Department{}
+  |> Department.changeset(attrs)
+  |> Repo.insert()
+end
+
+def set_department_manager(department_id, manager_id) do
+  Repo.get!(Department, department_id)
+  |> Ecto.Changeset.change(manager_id: manager_id)
+  |> Repo.update()
+end
+  def create_department_with_manager(dept_attrs, manager_attrs) do
+  Repo.transaction(fn ->
+    dept = Repo.insert!(%Department{name: dept_attrs.name})
+
+    manager_attrs = Map.put(manager_attrs, :department_id, dept.id)
+    manager = create_employee(manager_attrs)
+
+    dept
+    |> Ecto.Changeset.change(manager_id: manager.id)
+    |> Repo.update!()
+  end)
+end
+
+
+
   def list_departments do
-    Repo.all(Department)
+    Department
+    |> Repo.all()
+    |> Repo.preload(:manager)
   end
 
   def get_department!(id) do
     Repo.get!(Department, id)
+  end
+
+  def update_department(%Department{} = department, attrs) do
+    department
+    |> Department.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_department(%Department{} = department) do
+    Repo.delete(department)
   end
 end

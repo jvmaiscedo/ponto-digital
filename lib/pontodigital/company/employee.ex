@@ -26,7 +26,7 @@ defmodule Pontodigital.Company.Employee do
     field :password, :string, virtual: true
     field :role, Ecto.Enum, values: [:employee, :admin], virtual: true, default: :employee
     field :status, Ecto.Enum, values: [:working, :offline], virtual: true, default: :offline
-
+    field :set_as_manager, :boolean, virtual: true, default: false
     timestamps()
   end
 
@@ -42,7 +42,8 @@ defmodule Pontodigital.Company.Employee do
       :password,
       :role,
       :work_schedule_id,
-      :department_id
+      :department_id,
+      :set_as_manager
     ])
     |> validate_required([:full_name, :position, :admission_date, :email, :password, :role])
     |> foreign_key_constraint(:work_schedule_id)
@@ -51,7 +52,7 @@ defmodule Pontodigital.Company.Employee do
 
   def admin_update_changeset(employee, attrs) do
     employee
-    |> cast(attrs, [:full_name, :position, :admission_date, :work_schedule_id, :department_id])
+    |> cast(attrs, [:full_name, :position, :admission_date, :work_schedule_id, :department_id, :set_as_manager])
     |> validate_required([:full_name, :position])
 
     # Sem validação de senha ou email aqui!
