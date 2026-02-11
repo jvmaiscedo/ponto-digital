@@ -6,7 +6,7 @@ defmodule PontodigitalWeb.AdminLive.Settings.Index do
     {:ok, assign(socket, page_title: "Configurações")}
   end
 
-  @impl true
+@impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-4xl px-4 py-8">
@@ -22,7 +22,7 @@ defmodule PontodigitalWeb.AdminLive.Settings.Index do
           Parâmetros do Sistema
         </h1>
         <p class="text-sm text-zinc-500 dark:text-zinc-400">
-          Configurações globais de calendário e turnos.
+          Configurações globais de calendário, estrutura e turnos.
         </p>
       </div>
 
@@ -58,6 +58,23 @@ defmodule PontodigitalWeb.AdminLive.Settings.Index do
           </div>
           <p class="text-zinc-500 dark:text-zinc-400 text-sm">
             Defina os turnos, horários de entrada/saída e regras de tolerância para os diferentes tipos de contrato.
+          </p>
+        </.link>
+
+        <.link
+          navigate={~p"/admin/configuracoes/departamentos"}
+          class="group block p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 transition-all shadow-sm hover:shadow-md"
+        >
+          <div class="flex items-center gap-4 mb-4">
+            <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+              <.icon name="hero-building-office-2" class="size-6" />
+            </div>
+            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Departamentos
+            </h3>
+          </div>
+          <p class="text-zinc-500 dark:text-zinc-400 text-sm">
+            Gerencie a estrutura organizacional, crie novos setores e defina os gerentes responsáveis por cada área.
           </p>
         </.link>
       </div>
