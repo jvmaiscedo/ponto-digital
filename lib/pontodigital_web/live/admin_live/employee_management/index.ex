@@ -149,9 +149,11 @@ def mount(_params, _session, socket) do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
+    current_employee = socket.assigns.current_employee
+    employee = Company.get_employee_secure!(id, current_employee)
     socket
     |> assign(:page_title, "Editar Funcionário")
-    |> assign(:employee, Company.get_employee!(id))
+    |> assign(:employee, employee)
   end
 
   defp apply_action(socket, :new, _params) do

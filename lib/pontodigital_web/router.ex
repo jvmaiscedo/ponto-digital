@@ -47,8 +47,8 @@ defmodule PontodigitalWeb.Router do
     end
   end
 
-  scope "/admin", PontodigitalWeb do
-    pipe_through :admin_access
+scope "/admin", PontodigitalWeb do
+    pipe_through :browser
 
     live_session :admin_dashboard,
       on_mount: [
@@ -62,10 +62,17 @@ defmodule PontodigitalWeb.Router do
       live "/gestao-pessoas/funcionarios/:id/editar", AdminLive.EmployeeManagement.Index, :edit
       live "/gestao-pessoas/novo", AdminLive.EmployeeManagement.New, :new
       live "/metricas", AdminLive.MetricsLive.Index, :index
-      live "/configuracoes", AdminLive.Settings.Index, :index
-      live "/configuracoes/feriados", AdminLive.HolidayManagement.Index
       live "/inbox", AdminLive.InboxLive.Index, :index
       live "/inbox/:id", AdminLive.InboxLive.Show, :show
+    end
+
+    live_session :master_access,
+      on_mount: [
+        {PontodigitalWeb.UserAuth, :mount_current_scope},
+        {PontodigitalWeb.UserAuth, :ensure_master}
+      ] do
+      live "/configuracoes", AdminLive.Settings.Index, :index
+      live "/configuracoes/feriados", AdminLive.HolidayManagement.Index
       live "/configuracoes/jornadas", AdminLive.WorkScheduleManagement.Index, :index
       live "/configuracoes/jornadas/nova", AdminLive.WorkScheduleManagement.Index, :new
       live "/configuracoes/jornadas/:id/editar", AdminLive.WorkScheduleManagement.Index, :edit

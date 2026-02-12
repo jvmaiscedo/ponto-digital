@@ -246,6 +246,21 @@ defmodule PontodigitalWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_master, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    if socket.assigns.current_scope.user && socket.assigns.current_scope.user.role == :master do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "Acesso restrito ao Master.")
+        |> Phoenix.LiveView.redirect(to: ~p"/admin")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:ensure_admin, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
