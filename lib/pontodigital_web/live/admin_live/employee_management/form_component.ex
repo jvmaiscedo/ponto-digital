@@ -66,11 +66,15 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
     """
   end
 
-  @impl true
+ @impl true
   def update(%{employee: employee} = assigns, socket) do
-    changeset = Company.change_employee_for_admin(employee)
-
-   departments = Company.list_departments_for_select(assigns.current_employee)
+    is_manager =
+      case employee.department do
+        %{manager_id: manager_id} -> manager_id == employee.id
+        _ -> false
+      end
+    changeset = Company.change_employee_for_admin(employee, %{set_as_manager: is_manager})
+    departments = Company.list_departments_for_select(assigns.current_employee)
     work_schedules = Company.list_work_schedules()
     {:ok,
      socket

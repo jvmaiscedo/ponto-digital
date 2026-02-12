@@ -139,33 +139,49 @@ def list_admin_employees do
   def update_employee_as_admin(employee, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:employee, Employee.admin_update_changeset(employee, attrs))
-    |> Ecto.Multi.run(:promote, fn repo, %{employee: updated_employee} ->
-      if attrs["set_as_manager"] == "true" or attrs[:set_as_manager] == true do
-        promote_employee_to_manager(repo, updated_employee)
-      else
-        {:ok, nil}
+    |> Ecto.Multi.run(:manager_logic, fn repo, %{employee: updated_employee} ->
+      set_manager? = attrs["set_as_manager"] == "true" or attrs[:set_as_manager] == true
+
+      department = repo.get!(Department, updated_employee.department_id)
+      is_current_manager = department.manager_id == updated_employee.id
+
+      cond do
+        set_manager? and not is_current_manager ->
+          promote_to_manager(repo, updated_employee, department)
+
+        not set_manager? and is_current_manager ->
+          demote_from_manager(repo, updated_employee, department)
+
+        true ->
+          {:ok, nil}
       end
     end)
     |> Repo.transaction()
     |> case do
       {:ok, %{employee: employee}} -> {:ok, employee}
       {:error, :employee, changeset, _} -> {:error, changeset}
-      {:error, :promote, _, _} -> {:error, Ecto.Changeset.add_error(Employee.changeset(employee, %{}), :base, "Erro ao promover funcionário")}
+      {:error, :manager_logic, changeset, _} -> {:error, changeset}
     end
   end
 
-  defp promote_employee_to_manager(repo, employee) do
-    department = repo.get!(Department, employee.department_id)
-
+  defp promote_to_manager(repo, employee, department) do
     with {:ok, _} <- repo.update(Ecto.Changeset.change(department, manager_id: employee.id)) do
-      employee = repo.preload(employee, :user)
-
-      if employee.user.role == :employee do
-        employee.user
-        |> Ecto.Changeset.change(role: :admin)
-        |> repo.update()
+      user = repo.preload(employee, :user).user
+      if user.role == :employee do
+        user |> Ecto.Changeset.change(role: :admin) |> repo.update()
       else
-        {:ok, employee.user}
+        {:ok, user}
+      end
+    end
+  end
+
+  defp demote_from_manager(repo, employee, department) do
+    with {:ok, _} <- repo.update(Ecto.Changeset.change(department, manager_id: nil)) do
+      user = repo.preload(employee, :user).user
+      if user.role == :admin do
+        user |> Ecto.Changeset.change(role: :employee) |> repo.update()
+      else
+        {:ok, user}
       end
     end
   end
