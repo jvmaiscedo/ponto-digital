@@ -137,9 +137,37 @@ def list_admin_employees do
   end
 
   def update_employee_as_admin(employee, attrs) do
-    employee
-    |> Employee.admin_update_changeset(attrs)
-    |> Repo.update()
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:employee, Employee.admin_update_changeset(employee, attrs))
+    |> Ecto.Multi.run(:promote, fn repo, %{employee: updated_employee} ->
+      if attrs["set_as_manager"] == "true" or attrs[:set_as_manager] == true do
+        promote_employee_to_manager(repo, updated_employee)
+      else
+        {:ok, nil}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{employee: employee}} -> {:ok, employee}
+      {:error, :employee, changeset, _} -> {:error, changeset}
+      {:error, :promote, _, _} -> {:error, Ecto.Changeset.add_error(Employee.changeset(employee, %{}), :base, "Erro ao promover funcionário")}
+    end
+  end
+
+  defp promote_employee_to_manager(repo, employee) do
+    department = repo.get!(Department, employee.department_id)
+
+    with {:ok, _} <- repo.update(Ecto.Changeset.change(department, manager_id: employee.id)) do
+      employee = repo.preload(employee, :user)
+
+      if employee.user.role == :employee do
+        employee.user
+        |> Ecto.Changeset.change(role: :admin)
+        |> repo.update()
+      else
+        {:ok, employee.user}
+      end
+    end
   end
 
   @doc """
