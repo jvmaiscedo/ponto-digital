@@ -162,6 +162,34 @@ def list_admin_employees do
     |> Repo.preload(:work_schedule)
   end
 
+  @doc """
+  Busca um funcionário garantindo que o usuário solicitante tenha permissão.
+  - Master: Pode buscar qualquer ID.
+  - Admin (Gerente): Só pode buscar IDs do mesmo departamento.
+  """
+def get_employee_secure!(id, current_employee) do
+    current_employee = Repo.preload(current_employee, :user)
+
+    base_query =
+      Employee
+      |> join(:inner, [e], u in assoc(e, :user))
+      |> preload([:user, :department])
+
+    case current_employee.user do
+      %{role: :master} ->
+        Repo.get!(base_query, id)
+
+      %{role: :admin} ->
+        base_query
+        |> where([e], e.id == ^id)
+        |> where([e], e.department_id == ^current_employee.department_id)
+        |> Repo.one!()
+
+      _ ->
+        raise Ecto.NoResultsError, queryable: Employee
+    end
+  end
+
   def get_employee_by_user(user_id) do
     Repo.get_by(Employee, user_id: user_id)
   end
@@ -305,6 +333,22 @@ end
     Department
     |> Repo.all()
     |> Repo.preload(:manager)
+  end
+
+  @doc """
+  Retorna a lista de departamentos que o usuário atual pode selecionar num formulário.
+  - Master: Todos os departamentos.
+  - Admin (Gerente): Apenas o próprio departamento.
+  """
+  def list_departments_for_select(%Employee{} = current_employee) do
+    current_employee = Repo.preload(current_employee, :user)
+
+    if current_employee.user.role == :master do
+      list_departments()
+    else
+      department = get_department!(current_employee.department_id)
+      [department]
+    end
   end
 
   def get_department!(id) do
