@@ -145,8 +145,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
   attr :work_schedules, :list, default: []
   attr :departments, :list, default: []
   attr :action, :string, default: "/admin/"
+  attr :is_master, :boolean, default: false
 
   def employee_registration_form(assigns) do
+    is_single_department = length(assigns.departments) == 1
+    selected_department_id = if is_single_department, do: hd(assigns.departments).id, else: nil
+
+    assigns =
+      assigns
+      |> assign(:is_single_department, is_single_department)
+      |> assign(:selected_department_id, selected_department_id)
+
     ~H"""
     <div class="overflow-hidden rounded-xl bg-white dark:bg-zinc-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10">
       <.form
@@ -233,21 +242,29 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
               />
             </div>
             <div class="sm:col-span-3">
-               <.input
+              <.input
                 field={@form[:department_id]}
                 type="select"
                 label="Departamento"
-                prompt="Selecione um departamento"
+                prompt={if @is_single_department, do: nil, else: "Selecione um departamento"}
                 options={Enum.map(@departments, &{&1.name, &1.id})}
+                value={@form[:department_id].value || @selected_department_id}
+                disabled={@is_single_department}
                 required
               />
-              <div>
-            <.input
-      field={@form[:set_as_manager]}
-      type="checkbox"
-      label="Definir como gerente do departamento."
-    />
-            </div>
+              <%= if @is_single_department do %>
+                <input type="hidden" name="employee[department_id]" value={@selected_department_id} />
+              <% end %>
+
+              <%= if @is_master do %>
+                <div class="mt-4">
+                  <.input
+                    field={@form[:set_as_manager]}
+                    type="checkbox"
+                    label="Definir como gerente do departamento."
+                  />
+                </div>
+              <% end %>
             </div>
 
             <div class="sm:col-span-3">

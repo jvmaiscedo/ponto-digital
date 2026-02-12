@@ -12,7 +12,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
         <:subtitle>Use este formulário para gerenciar os registros dos funcionários.</:subtitle>
       </.header>
 
-     <.simple_form
+      <.simple_form
         for={@form}
         id="employee-form"
         phx-target={@myself}
@@ -23,18 +23,33 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
 
         <.input field={@form[:position]} type="text" label="Cargo / Posição" />
 
+        <%
+          is_single_department = length(@departments) == 1
+          selected_department_id = if is_single_department, do: hd(@departments).id, else: nil
+        %>
+
         <.input
           field={@form[:department_id]}
           type="select"
           label="Departamento"
           options={Enum.map(@departments, &{&1.name, &1.id})}
-          prompt="Selecione um departamento"
+          prompt={if is_single_department, do: nil, else: "Selecione um departamento"}
+          value={@form[:department_id].value || selected_department_id}
+          disabled={is_single_department}
         />
-        <.input
-          field={@form[:set_as_manager]}
-          type="checkbox"
-          label="Definir este funcionário como Gerente do Departamento selecionado"
-        />
+
+        <%= if is_single_department do %>
+          <input type="hidden" name="employee[department_id]" value={selected_department_id} />
+        <% end %>
+
+        <%= if @current_employee.user.role == :master do %>
+          <.input
+            field={@form[:set_as_manager]}
+            type="checkbox"
+            label="Definir como Gerente do Departamento"
+          />
+        <% end %>
+
         <.input
           field={@form[:work_schedule_id]}
           type="select"
@@ -55,7 +70,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
   def update(%{employee: employee} = assigns, socket) do
     changeset = Company.change_employee_for_admin(employee)
 
-    departments = Company.list_departments()
+   departments = Company.list_departments_for_select(assigns.current_employee)
     work_schedules = Company.list_work_schedules()
     {:ok,
      socket

@@ -30,6 +30,7 @@
     form={@form} 
     work_schedules={@work_schedules}
     departments = {@departments}
-    action={~p"/admin/"} 
+    action={~p"/admin/gestao-pessoas"}
+    is_master={@current_user.role == :master}
   />
 </div>

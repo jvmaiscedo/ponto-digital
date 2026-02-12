@@ -8,15 +8,17 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
 
   @impl true
   def mount(_params, _session, socket) do
+    current_employee = Company.get_employee_by_user!(socket.assigns.current_scope.user.id)
     changeset = Company.change_employee(%Employee{})
     work_schedules = Company.list_work_schedules()
-    departments = Company.list_departments()
+    departments = Company.list_departments_for_select(current_employee)
 
     {:ok,
      socket
      |> assign(form: to_form(changeset))
      |> assign(work_schedules: work_schedules)
-     |>assign(departments: departments)}
+     |> assign(current_user: socket.assigns.current_scope.user)
+     |> assign(departments: departments)}
   end
 
   # Validação
