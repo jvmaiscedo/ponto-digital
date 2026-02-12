@@ -34,14 +34,25 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
 
   @impl true
   def handle_event("save", %{"employee" => employee_params}, socket) do
-    case Company.register_employee_with_user(employee_params) do
-      {:ok, _result} ->
+    current_employee = socket.assigns.current_employee |> Pontodigital.Repo.preload(:user)
+
+    employee_params =
+      if current_employee.user.role == :master do
+        employee_params
+      else
+        employee_params
+        |> Map.put("department_id", current_employee.department_id)
+        |> Map.delete("set_as_manager")
+      end
+
+    case Company.create_employee(employee_params) do
+      {:ok, _employee} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Funcionário e Usuário criados com sucesso!")
-         |> push_navigate(to: ~p"/admin/")}
+         |> put_flash(:info, "Funcionário criado com sucesso")
+         |> push_navigate(to: ~p"/admin/gestao-pessoas/funcionarios")}
 
-      {:error, _failed_operation, changeset, _changes} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end

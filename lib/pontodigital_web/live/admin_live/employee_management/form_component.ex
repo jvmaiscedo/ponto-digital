@@ -92,9 +92,19 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.FormComponent do
 
   @impl true
   def handle_event("save", %{"employee" => employee_params}, socket) do
+    current_employee = socket.assigns.current_employee |> Pontodigital.Repo.preload(:user)
+
+    employee_params =
+      if current_employee.user.role == :master do
+        employee_params
+      else
+        employee_params
+        |> Map.put("department_id", current_employee.department_id)
+        |> Map.delete("set_as_manager")
+      end
+
     save_employee(socket, socket.assigns.action, employee_params)
   end
-
  defp save_employee(socket, :edit, employee_params) do
     case Company.update_employee_as_admin(socket.assigns.employee, employee_params) do
       {:ok, employee} ->
