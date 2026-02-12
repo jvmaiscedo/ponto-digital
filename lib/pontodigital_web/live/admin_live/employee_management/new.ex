@@ -17,6 +17,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
      socket
      |> assign(form: to_form(changeset))
      |> assign(work_schedules: work_schedules)
+     |> assign(current_employee: current_employee)
      |> assign(current_user: socket.assigns.current_scope.user)
      |> assign(departments: departments)}
   end
@@ -45,7 +46,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.New do
         |> Map.delete("set_as_manager")
       end
 
-    case Company.create_employee(employee_params) do
+    case Company.register_employee_with_user(employee_params) do
       {:ok, _employee} ->
         {:noreply,
          socket
