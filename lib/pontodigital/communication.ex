@@ -83,7 +83,7 @@ defmodule Pontodigital.Communication do
   end
 
   @doc """
-  Returns an '%Ecto.Changeset{}` for tracking inbox_message changes
+  Returns an `%Ecto.Changeset{}` for tracking inbox_message changes
   """
   def change_inbox_message(%InboxMessage{} = inbox_message, attrs \\ %{}) do
     InboxMessage.changeset(inbox_message, attrs)
