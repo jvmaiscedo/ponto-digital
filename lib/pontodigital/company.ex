@@ -1,6 +1,9 @@
 defmodule Pontodigital.Company do
   @moduledoc """
-  The Company context.
+  Contexto responsável pela estrutura organizacional.
+
+  Gerencia Funcionários (`Employee`), Departamentos e Jornadas de Trabalho.
+  Possui lógica complexa de transações para garantir consistência entre Usuários de Autenticação e Perfis de Funcionário.
   """
 
   import Ecto.Query, warn: false
@@ -12,6 +15,17 @@ defmodule Pontodigital.Company do
   alias Pontodigital.Company.WorkSchedule
   alias Pontodigital.Company.Department
 
+  @doc """
+  Registra um funcionário e seu usuário de acesso simultaneamente.
+
+  ## Fluxo da Transação (`Ecto.Multi`)
+  1. **User:** Cria o registro na tabela de autenticação (`Accounts`).
+  2. **Employee:** Cria o perfil profissional vinculado ao usuário criado.
+  3. **Manager Link:** Se a flag `set_as_manager` estiver ativa, atualiza o Departamento correspondente para apontar este novo funcionário como gestor.
+
+  ## Retorno
+  Retorna `{:ok, map_results}` onde `map_results` contém as structs criadas, ou `{:error, step, reason, ...}` se qualquer etapa falhar.
+  """
   def register_employee_with_user(attrs) do
     Multi.new()
     |> Multi.run(:user, fn _repo, _changes ->
@@ -44,10 +58,12 @@ defmodule Pontodigital.Company do
   Constrói a query base para listagem, incluindo Joins e Filtros.
   Não executa a query, apenas retorna o struct Ecto.Query.
   """
- def list_employees_query(params \\ %{}) do
+  def list_employees_query(params \\ %{}) do
     search_term = params["q"] || ""
 
-    department_id = if params["department_id"] in ["", nil], do: nil, else: params["department_id"]
+    department_id =
+      if params["department_id"] in ["", nil], do: nil, else: params["department_id"]
+
     exclude_id = params["exclude_id"]
 
     last_clock_query =
@@ -119,12 +135,11 @@ defmodule Pontodigital.Company do
     end
   end
 
-
   defp derive_status(type) when type in [:entrada, :retorno_almoco], do: :ativo
   defp derive_status(:ida_almoco), do: :almoco
   defp derive_status(_), do: :inativo
 
-def list_admin_employees do
+  def list_admin_employees do
     from(e in Employee,
       join: u in assoc(e, :user),
       where: u.role == :admin,
@@ -132,29 +147,25 @@ def list_admin_employees do
     )
     |> Repo.all()
   end
+
   def change_employee_for_admin(employee, attrs \\ %{}) do
     Employee.admin_update_changeset(employee, attrs)
   end
 
+  @doc """
+  Atualiza os dados de um funcionário por um administrador, gerenciando promoções e rebaixamentos de cargo.
+
+  ## Lógica de Gestão (Side-Effects)
+  Além de atualizar os campos do funcionário, esta função verifica a flag `set_as_manager`:
+  - **Promoção:** Se `true`, define o funcionário como gestor do departamento e eleva seu `user.role` para `:admin`.
+  - **Rebaixamento:** Se `false` (e ele era gestor), remove a gestão do departamento e rebaixa seu `user.role` para `:employee` (se ele não for admin por outro motivo).
+  """
   def update_employee_as_admin(employee, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:employee, Employee.admin_update_changeset(employee, attrs))
     |> Ecto.Multi.run(:manager_logic, fn repo, %{employee: updated_employee} ->
-      set_manager? = attrs["set_as_manager"] == "true" or attrs[:set_as_manager] == true
-
-      department = repo.get!(Department, updated_employee.department_id)
-      is_current_manager = department.manager_id == updated_employee.id
-
-      cond do
-        set_manager? and not is_current_manager ->
-          promote_to_manager(repo, updated_employee, department)
-
-        not set_manager? and is_current_manager ->
-          demote_from_manager(repo, updated_employee, department)
-
-        true ->
-          {:ok, nil}
-      end
+      # Chamamos a nova função privada aqui, passando os attrs necessários
+      manage_manager_role(repo, updated_employee, attrs)
     end)
     |> Repo.transaction()
     |> case do
@@ -164,9 +175,27 @@ def list_admin_employees do
     end
   end
 
+  defp manage_manager_role(repo, employee, attrs) do
+    set_manager? = attrs["set_as_manager"] == "true" or attrs[:set_as_manager] == true
+    department = repo.get!(Department, employee.department_id)
+    is_current_manager = department.manager_id == employee.id
+
+    cond do
+      set_manager? and not is_current_manager ->
+        promote_to_manager(repo, employee, department)
+
+      not set_manager? and is_current_manager ->
+        demote_from_manager(repo, employee, department)
+
+      true ->
+        {:ok, nil}
+    end
+  end
+
   defp promote_to_manager(repo, employee, department) do
     with {:ok, _} <- repo.update(Ecto.Changeset.change(department, manager_id: employee.id)) do
       user = repo.preload(employee, :user).user
+
       if user.role == :employee do
         user |> Ecto.Changeset.change(role: :admin) |> repo.update()
       else
@@ -178,6 +207,7 @@ def list_admin_employees do
   defp demote_from_manager(repo, employee, department) do
     with {:ok, _} <- repo.update(Ecto.Changeset.change(department, manager_id: nil)) do
       user = repo.preload(employee, :user).user
+
       if user.role == :admin do
         user |> Ecto.Changeset.change(role: :employee) |> repo.update()
       else
@@ -207,11 +237,17 @@ def list_admin_employees do
   end
 
   @doc """
-  Busca um funcionário garantindo que o usuário solicitante tenha permissão.
-  - Master: Pode buscar qualquer ID.
-  - Admin (Gerente): Só pode buscar IDs do mesmo departamento.
+  Busca um funcionário aplicando regras estritas de escopo de dados (Row-Level Security manual).
+
+  ## Regras de Permissão
+  - **Master:** Tem acesso irrestrito a qualquer ID.
+  - **Admin (Gestor):** Só pode acessar funcionários que pertencem ao *mesmo departamento* que ele. Tentar acessar ID de outro departamento levanta `Ecto.NoResultsError`.
+  - **Employee:** Não deve acessar esta função (o código levanta erro padrão para roles não tratadas).
+
+  ## Exceções
+  Levanta `Ecto.NoResultsError` se o registro não existir ou se o usuário não tiver permissão para vê-lo.
   """
-def get_employee_secure!(id, current_employee) do
+  def get_employee_secure!(id, current_employee) do
     current_employee = Repo.preload(current_employee, :user)
 
     base_query =
@@ -340,7 +376,7 @@ def get_employee_secure!(id, current_employee) do
     WorkSchedule.changeset(work_schedule, attrs)
   end
 
-@doc """
+  @doc """
   Retorna um %Ecto.Changeset{} para rastrear alterações no departamento.
   """
   def change_department(%Department{} = department, attrs \\ %{}) do
@@ -348,30 +384,29 @@ def get_employee_secure!(id, current_employee) do
   end
 
   def create_department(attrs \\ %{}) do
-  %Department{}
-  |> Department.changeset(attrs)
-  |> Repo.insert()
-end
+    %Department{}
+    |> Department.changeset(attrs)
+    |> Repo.insert()
+  end
 
-def set_department_manager(department_id, manager_id) do
-  Repo.get!(Department, department_id)
-  |> Ecto.Changeset.change(manager_id: manager_id)
-  |> Repo.update()
-end
+  def set_department_manager(department_id, manager_id) do
+    Repo.get!(Department, department_id)
+    |> Ecto.Changeset.change(manager_id: manager_id)
+    |> Repo.update()
+  end
+
   def create_department_with_manager(dept_attrs, manager_attrs) do
-  Repo.transaction(fn ->
-    dept = Repo.insert!(%Department{name: dept_attrs.name})
+    Repo.transaction(fn ->
+      dept = Repo.insert!(%Department{name: dept_attrs.name})
 
-    manager_attrs = Map.put(manager_attrs, :department_id, dept.id)
-    manager = create_employee(manager_attrs)
+      manager_attrs = Map.put(manager_attrs, :department_id, dept.id)
+      manager = create_employee(manager_attrs)
 
-    dept
-    |> Ecto.Changeset.change(manager_id: manager.id)
-    |> Repo.update!()
-  end)
-end
-
-
+      dept
+      |> Ecto.Changeset.change(manager_id: manager.id)
+      |> Repo.update!()
+    end)
+  end
 
   def list_departments do
     Department

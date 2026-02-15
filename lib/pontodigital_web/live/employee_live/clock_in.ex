@@ -13,38 +13,47 @@ defmodule PontodigitalWeb.EmployeeLive.ClockIn do
 
   @impl true
   def handle_event("registrar_ponto", %{"type" => type_string}, socket) do
-    type =
-      case type_string do
-        "entrada" -> :entrada
-        "ida_almoco" -> :ida_almoco
-        "retorno_almoco" -> :retorno_almoco
-        "saida" -> :saida
-        _ -> nil
-      end
+    type_string
+    |> cast_clock_type()
+    |> register_clock_in(socket)
+  end
 
-    if type do
-      case Timekeeping.register_clock_in(socket.assigns.employee.id, type) do
-        {:ok, _clock} ->
-          new_allowed = Timekeeping.get_allowed_types(socket.assigns.employee.id)
+  defp cast_clock_type("entrada"), do: :entrada
+  defp cast_clock_type("ida_almoco"), do: :ida_almoco
+  defp cast_clock_type("retorno_almoco"), do: :retorno_almoco
+  defp cast_clock_type("saida"), do: :saida
+  defp cast_clock_type(_), do: nil
 
-          socket =
-            socket
-            |> put_flash(:info, "Ponto registrado com sucesso!")
-            |> assign(:allowed_types, new_allowed)
+  defp register_clock_in(nil, socket) do
+    {:noreply, put_flash(socket, :error, "Tipo de ponto inválido!")}
+  end
 
-          {:noreply, socket}
+  defp register_clock_in(type, socket) do
+    socket.assigns.employee.id
+    |> Timekeeping.register_clock_in(type)
+    |> handle_registration_result(socket)
+  end
 
-        {:error, :invalid_sequence, msg} ->
-          {:noreply, put_flash(socket, :error, msg)}
+  defp handle_registration_result({:ok, _clock}, socket) do
+    new_allowed = Timekeeping.get_allowed_types(socket.assigns.employee.id)
 
-        {:error, :duplicate_entry} ->
-          {:noreply, put_flash(socket, :error, "Registro duplicado.")}
+    socket =
+      socket
+      |> put_flash(:info, "Ponto registrado com sucesso!")
+      |> assign(:allowed_types, new_allowed)
 
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Erro ao registrar.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "Tipo de ponto inválido!")}
-    end
+    {:noreply, socket}
+  end
+
+  defp handle_registration_result({:error, :invalid_sequence, msg}, socket) do
+    {:noreply, put_flash(socket, :error, msg)}
+  end
+
+  defp handle_registration_result({:error, :duplicate_entry}, socket) do
+    {:noreply, put_flash(socket, :error, "Registro duplicado.")}
+  end
+
+  defp handle_registration_result({:error, _}, socket) do
+    {:noreply, put_flash(socket, :error, "Erro ao registrar.")}
   end
 end

@@ -35,7 +35,7 @@ unless Pontodigital.Accounts.get_user_by_email("admin@admin.com") do
     Pontodigital.Accounts.register_user(%{
       email: "admin@admin.com",
       password: "computacao321",
-      role: :admin
+      role: :master
     })
 
   Pontodigital.Accounts.User.confirm_changeset(admin_user)

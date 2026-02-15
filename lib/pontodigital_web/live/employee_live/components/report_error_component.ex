@@ -50,7 +50,8 @@ defmodule PontodigitalWeb.EmployeeLive.Components.ReportErrorComponent do
 
   defp consume_upload(socket) do
     consume_uploaded_entries(socket, :document, fn %{path: path}, entry ->
-      filename = "#{System.system_time(:millisecond)}_#{entry.client_name}"
+      ext = Path.extname(entry.client_name)
+      filename = "#{Ecto.UUID.generate()}#{ext}"
       dest_path = Path.join("priv/static/uploads/documents", filename)
 
       File.mkdir_p!(Path.dirname(dest_path))

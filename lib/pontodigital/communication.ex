@@ -4,10 +4,25 @@ defmodule Pontodigital.Communication do
 
   alias Pontodigital.Communication.InboxMessage
 
-  @doc """
-  Returns the list of inbox_messsages.
+  @moduledoc """
+  Contexto de Comunicação interna (Mensageria).
+
+  Gerencia o envio e leitura de `InboxMessages`. Implementa filtros de visibilidade baseados na hierarquia da empresa.
   """
-def list_inbox_messages(params \\ %{}, current_employee) do
+
+  @doc """
+  Lista mensagens com filtragem dinâmica baseada no papel (`role`) do usuário atual.
+
+  ## Regras de Visibilidade
+  - **Master:** Visualiza todas as mensagens do sistema.
+  - **Admin (Gestor):** Visualiza apenas as mensagens enviadas por funcionários do **seu departamento** (`department.manager_id == current_user.id`).
+  - **Outros:** Retorna uma lista vazia (query com `is_nil(id)`), impedindo acesso a dados não autorizados.
+
+  ## Parâmetros
+  - `params`: Parâmetros de paginação e filtro do `Flop`.
+  - `current_employee`: O funcionário logado que está requisitando os dados.
+  """
+  def list_inbox_messages(params \\ %{}, current_employee) do
     current_employee = Pontodigital.Repo.preload(current_employee, :user)
 
     base_query =

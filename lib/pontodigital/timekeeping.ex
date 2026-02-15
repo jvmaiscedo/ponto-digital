@@ -1,6 +1,9 @@
 defmodule Pontodigital.Timekeeping do
   @moduledoc """
-  The Timekeeping context.
+  Contexto responsável pelo domínio de Gestão de Tempo.
+
+  Este módulo gerencia o ciclo de vida dos registros de ponto (`ClockIn`),
+  o cálculo de saldos, abonos, feriados e a geração do espelho mensal.
   """
 
   import Ecto.Query, warn: false
@@ -92,6 +95,25 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.one()
   end
 
+  @doc """
+  Registra um novo ponto eletrônico, garantindo a consistência temporal e as regras de negócio.
+
+  A operação é atômica (envolvida numa transação de banco de dados).
+
+  ## Regras de Negócio (Invariantes)
+  1. **Unicidade:** Não permite registros duplicados do mesmo tipo no mesmo dia.
+  2. **Sequencialidade:** Valida estritamente a ordem `:entrada` -> `:ida_almoco` -> `:retorno_almoco` -> `:saida`.
+  3. **Limite de Dia:** Detecta automaticamente a virada do dia (baseado em `America/Sao_Paulo`). O primeiro registro de um novo dia deve ser obrigatoriamente uma `:entrada`.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `type`: O tipo de batida (ex: `:entrada`).
+
+  ## Retorno
+  - `{:ok, %ClockIn{}}`: Sucesso.
+  - `{:error, reason}`: Violação de regra de negócio (átomo) ou tupla com mensagem.
+  - `{:error, changeset}`: Erro de validação de dados.
+  """
   def register_clock_in(employee_id, type) do
     Repo.transaction(fn ->
       with {:ok, _} <- validate_no_duplicates(employee_id, type),
@@ -158,7 +180,7 @@ defmodule Pontodigital.Timekeeping do
   def get_allowed_types(employee_id) do
     last_clock = get_last_clock_in_by_employee_id(employee_id)
 
-    if is_new_day?(last_clock) do
+    if new_day?(last_clock) do
       [:entrada]
     else
       case last_clock.type do
@@ -177,7 +199,7 @@ defmodule Pontodigital.Timekeeping do
     do: {:error, :invalid_sequence, "Você deve fazer uma entrada primeiro."}
 
   defp validate_sequence(last_clock, new_type) do
-    is_new = is_new_day?(last_clock)
+    is_new = new_day?(last_clock)
 
     cond do
       is_new and new_type == :entrada ->
@@ -192,9 +214,9 @@ defmodule Pontodigital.Timekeeping do
     end
   end
 
-  defp is_new_day?(nil), do: true
+  defp new_day?(nil), do: true
 
-  defp is_new_day?(last_clock) do
+  defp new_day?(last_clock) do
     timezone = "America/Sao_Paulo"
     {:ok, now} = DateTime.now(timezone)
     today = DateTime.to_date(now)
@@ -330,6 +352,17 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.update()
   end
 
+  @doc """
+  Realiza uma edição administrativa em um registro de ponto existente.
+
+  ## Efeitos Colaterais
+  Esta função **não** apaga o histórico. Ela cria um registro de auditoria na tabela `clock_in_adjustments` contendo:
+  - O valor anterior (timestamp e tipo).
+  - O ID do administrador responsável.
+  - A justificativa da alteração.
+
+  O registro original de `ClockIn` é marcado com `is_edited: true`.
+  """
   def admin_update_clock_in(%ClockIn{} = clock_in, attrs, admin_id) do
     adjustment_attrs = %{
       "clock_in_id" => clock_in.id,
@@ -549,8 +582,28 @@ defmodule Pontodigital.Timekeeping do
     end)
   end
 
-  # centralizacao de relatorio completo para o espelho de ponto.
+  @doc """
+  Gera o relatório completo (espelho de ponto) de um funcionário para um mês específico.
 
+  Esta função agrega dados de 5 fontes diferentes para compor a visualização diária:
+  1. **Pontos Batidos (`list_timesheet/4`):** Os registros brutos.
+  2. **Abonos (`list_absences_map/3`):** Faltas justificadas.
+  3. **Feriados (`list_holidays_map/2`):** Dias não úteis nacionais/locais.
+  4. **Férias (`list_vacations_map/3`):** Períodos de ausência remunerada.
+  5. **Diário de Bordo (`list_daily_logs_map/3`):** Anotações do funcionário.
+
+  ## Processamento
+  Para cada dia do mês, o sistema:
+  - Carrega a carga horária esperada (`daily_meta`).
+  - Calcula o saldo do dia (crédito ou débito) usando `Calculator.calculate_daily_balance/5`.
+  - Resolve registros faltantes (ex: decidir se desconta falta ou se é feriado).
+
+  ## Retorno
+  Retorna um mapa contendo:
+  - `:days`: Lista detalhada dia a dia.
+  - `:total_minutes`: Saldo líquido total do mês em minutos.
+  - `:formatted_total`: String formatada (ex: `"+05:30"`).
+  """
   def get_monthly_report(employee, date) do
     month_range = build_month_range(date)
 
@@ -627,7 +680,7 @@ defmodule Pontodigital.Timekeeping do
     end
   end
 
-  defp resolve_missing_records(debit, worked,employee, date, holiday, vacation) do
+  defp resolve_missing_records(debit, worked, employee, date, holiday, vacation) do
     case should_charge_absence?(employee, date, holiday, vacation) do
       true ->
         {debit, Calculator.format_balance(debit), worked}

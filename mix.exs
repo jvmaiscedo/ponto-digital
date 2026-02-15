@@ -69,7 +69,9 @@ defmodule Pontodigital.MixProject do
       {:bandit, "~> 1.5"},
       {:tzdata, "~> 1.1"},
       {:timex, "~> 3.7"},
-      {:flop_phoenix, "~> 0.25.3"}
+      {:flop_phoenix, "~> 0.25.3"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: :dev}
     ]
   end
 

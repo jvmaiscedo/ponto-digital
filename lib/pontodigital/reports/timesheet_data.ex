@@ -1,7 +1,6 @@
 defmodule Pontodigital.Reports.TimesheetData do
   alias Pontodigital.{Timekeeping, Repo}
 
-
   def build(employee, month, year) do
     employee = Repo.preload(employee, :work_schedule)
 
@@ -22,17 +21,17 @@ defmodule Pontodigital.Reports.TimesheetData do
     }
   end
 
-def build_weekly_payload(employee, month, year) do
+  def build_weekly_payload(employee, month, year) do
     employee = Repo.preload(employee, :work_schedule)
 
     target_date = Date.new!(year, month, 1)
 
-
     report_data = Timekeeping.get_monthly_report(employee, target_date)
 
-   days_of_month = Enum.filter(report_data.days, fn day ->
-      day.date.month == month
-    end)
+    days_of_month =
+      Enum.filter(report_data.days, fn day ->
+        day.date.month == month
+      end)
 
     weeks = group_days_by_week(days_of_month)
 
@@ -43,49 +42,48 @@ def build_weekly_payload(employee, month, year) do
       emitted_at: Calendar.strftime(Date.utc_today(), "%d/%m/%Y"),
       employee: %{
         name: employee.full_name,
-        position: employee.position || "Discente",
+        position: employee.position || "Discente"
       },
       weeks: weeks
     }
   end
 
-defp group_days_by_week(days) do
+  defp group_days_by_week(days) do
     days
     |> Enum.chunk_by(fn day ->
       {year, week} = Date.to_erl(day.date) |> :calendar.iso_week_number()
       {year, week}
     end)
     |> Enum.filter(fn week_days ->
-      Enum.any?(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
-    end)
-    |> Enum.filter(fn week_days ->
-      Enum.any?(week_days, &is_business_day?/1)
+      has_weekday? = Enum.any?(week_days, fn day -> Date.day_of_week(day.date) <= 5 end)
+      has_business_day? = Enum.any?(week_days, &is_business_day?/1)
+
+      has_weekday? and has_business_day?
     end)
     |> Enum.with_index(1)
     |> Enum.map(fn {week_days, index} ->
-      valid_business_days = Enum.filter(week_days, fn day ->
-        is_business_day?(day)
-      end)
+      valid_business_days = Enum.filter(week_days, &is_business_day?/1)
 
       start_date = List.first(valid_business_days).date
       end_date = List.last(valid_business_days).date
 
-      total_minutes_week = Enum.reduce(week_days, 0, fn day, acc ->
-        acc + (day.trabalhado_minutos || 0)
-      end)
-
+      total_minutes_week =
+        Enum.reduce(week_days, 0, fn day, acc ->
+          acc + (day.trabalhado_minutos || 0)
+        end)
 
       weekly_summary =
-        week_days
-        |> Enum.map(fn day ->
-          if day.daily_log, do: day.daily_log.description, else: nil
+        Enum.flat_map(week_days, fn day ->
+          case day.daily_log do
+            %{description: desc} when is_binary(desc) and desc != "" -> [desc]
+            _ -> []
+          end
         end)
-        |> Enum.reject(&is_nil/1)
-        |> Enum.reject(&(&1 == ""))
 
       %{
         label: "#{index}ª SEMANA",
-        period: "#{Calendar.strftime(start_date, "%d/%m")} a #{Calendar.strftime(end_date, "%d/%m")}",
+        period:
+          "#{Calendar.strftime(start_date, "%d/%m")} a #{Calendar.strftime(end_date, "%d/%m")}",
         total_hours: format_peti_hours(total_minutes_week),
         summary: weekly_summary
       }
@@ -95,12 +93,17 @@ defp group_days_by_week(days) do
   defp is_business_day?(day) do
     Date.day_of_week(day.date) <= 5 and is_nil(day.feriado)
   end
+
   defp format_peti_hours(0), do: ""
+
   defp format_peti_hours(minutes) do
     hours = div(abs(minutes), 60)
     mins = rem(abs(minutes), 60)
-    formatted = "#{String.pad_leading(to_string(hours), 2, "0")}:#{String.pad_leading(to_string(mins), 2, "0")}"
-    if minutes < 0, do: "" , else: formatted
+
+    formatted =
+      "#{String.pad_leading(to_string(hours), 2, "0")}:#{String.pad_leading(to_string(mins), 2, "0")}"
+
+    if minutes < 0, do: "", else: formatted
   end
 
   defp format_day(day) do
