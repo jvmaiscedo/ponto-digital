@@ -19,25 +19,19 @@ defmodule Pontodigital.Timekeeping do
   alias Pontodigital.Timekeeping.DailyLog
 
   @doc """
-  Returns the list of clock_ins.
+  Busca os registros de ponto de um funcionário para um mês e ano específicos.
 
-  ## Examples
+  Esta função calcula automaticamente o intervalo de datas (início e fim do mês) e converte
+  para UTC antes de realizar a consulta, garantindo que fusos horários sejam respeitados.
 
-      iex> list_clock_ins()
-      [%ClockIn{}, ...]
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `year`: Ano (inteiro).
+  - `month`: Mês (inteiro).
 
+  ## Retorno
+  - `[%ClockIn{}]`: Lista de registros ordenada por data.
   """
-  def list_clock_ins do
-    Repo.all(ClockIn)
-  end
-
-  def list_clock_ins_by_employee(%Employee{} = employee) do
-    ClockIn
-    |> where(employee_id: ^employee.id)
-    |> order_by(desc: :timestamp)
-    |> Repo.all()
-  end
-
   def get_monthly_clock_ins(employee_id, year, month) do
     start_date = Date.new!(year, month, 1)
 
@@ -64,6 +58,21 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.all()
   end
 
+  @doc """
+  Retorna os registros de ponto de um funcionário em um dia específico.
+
+  ## Processamento de Fuso Horário
+  Considera o dia civil no fuso `America/Sao_Paulo`.
+  A função converte o início (00:00:00) e o fim (23:59:59) desse dia local para UTC
+  para filtrar corretamente no banco de dados.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `date`: Data (`Date`) a ser consultada.
+
+  ## Retorno
+  - `[%ClockIn{}]`: Lista de registros do dia.
+  """
   def list_clock_ins_by_user_in_day(employee_id, date) do
     timezone = "America/Sao_Paulo"
 
@@ -82,11 +91,26 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.all()
   end
 
+  @doc """
+  Recupera o último registro de ponto válido de um funcionário.
+
+  ## Critérios
+  - Filtra apenas registros com status `:valid`.
+  - Utilizado principalmente para determinar o estado atual do funcionário (se está trabalhando, em almoço, etc).
+  - Base para validação de sequência de batidas.
+
+  ## Parâmetros
+  - `employee`: Struct `%Employee{}`.
+
+  ## Retorno
+  - `%ClockIn{}`: Último registro encontrado.
+  - `nil`: Se o funcionário nunca bateu ponto.
+  """
   def get_last_clock_in_by_employee(%Employee{} = employee) do
     get_last_clock_in_by_employee_id(employee.id)
   end
 
-  def get_last_clock_in_by_employee_id(employee_id) do
+  defp get_last_clock_in_by_employee_id(employee_id) do
     ClockIn
     |> where(employee_id: ^employee_id)
     |> where([c], c.status == :valid)
@@ -175,7 +199,21 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Retorna uma lista de átomos com os tipos de registro permitidos no momento.
+  Retorna uma lista de tipos de batida permitidos para o funcionário no momento atual.
+
+  ## Lógica de Decisão
+  Analisa o último ponto registrado:
+  - Se for um **novo dia** ou sem registros anteriores: Permite apenas `[:entrada]`.
+  - Se o último foi `:entrada`: Permite `[:ida_almoco, :saida]`.
+  - Se o último foi `:ida_almoco`: Permite `[:retorno_almoco]`.
+  - Se o último foi `:retorno_almoco`: Permite `[:saida]`.
+  - Se o último foi `:saida`: Permite `[:entrada]` (início de hora extra ou novo turno).
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+
+  ## Retorno
+  - `[:atom]`: Lista de átomos permitidos (ex: `[:ida_almoco, :saida]`).
   """
   def get_allowed_types(employee_id) do
     last_clock = get_last_clock_in_by_employee_id(employee_id)
@@ -251,7 +289,7 @@ defmodule Pontodigital.Timekeeping do
   defp format_type(nil), do: "Nenhum"
   defp format_type(other), do: Atom.to_string(other)
 
-  def list_timesheet(employee_id, year, month, timezone \\ "America/Sao_Paulo") do
+  defp list_timesheet(employee_id, year, month, timezone) do
     start_date = Date.new!(year, month, 1)
     end_date = Date.end_of_month(start_date)
 
@@ -302,66 +340,40 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Gets a single clock_in.
-  Raises `Ecto.NoResultsError` if the Clock in does not exist.
+  Busca um registro de ponto específico pelo ID.
 
-  ## Examples
+  ## Parâmetros
+  - `id`: ID do registro de ponto.
 
-      iex> get_clock_in!(123)
-      %ClockIn{}
-
-      iex> get_clock_in!(456)
-      ** (Ecto.NoResultsError)
-
+  ## Retorno
+  - `%ClockIn{}`: Registro encontrado.
+  - **Lança Erro:** `Ecto.NoResultsError` se não encontrado.
   """
   def get_clock_in!(id), do: Repo.get!(ClockIn, id)
 
-  @doc """
-  Creates a clock_in.
-
-  ## Examples
-
-      iex> create_clock_in(%{field: value})
-      {:ok, %ClockIn{}}
-
-      iex> create_clock_in(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_clock_in(attrs) do
+  defp create_clock_in(attrs) do
     %ClockIn{}
     |> ClockIn.changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Updates a clock_in.
+  Realiza uma edição administrativa (correção) em um registro de ponto existente.
 
-  ## Examples
+  ## Auditoria e Efeitos Colaterais
+  Esta função preserva a integridade histórica:
+  1. **Não apaga** o histórico original.
+  2. Cria um registro em `clock_in_adjustments` contendo o valor anterior, o ID do admin e a justificativa.
+  3. Marca o registro `ClockIn` original com a flag `is_edited: true`.
 
-      iex> update_clock_in(clock_in, %{field: new_value})
-      {:ok, %ClockIn{}}
+  ## Parâmetros
+  - `clock_in`: Registro original a ser editado.
+  - `attrs`: Novos atributos (ex: novo horário).
+  - `admin_id`: ID do usuário administrador que está realizando a ação.
 
-      iex> update_clock_in(clock_in, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_clock_in(%ClockIn{} = clock_in, attrs) do
-    clock_in
-    |> ClockIn.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Realiza uma edição administrativa em um registro de ponto existente.
-
-  ## Efeitos Colaterais
-  Esta função **não** apaga o histórico. Ela cria um registro de auditoria na tabela `clock_in_adjustments` contendo:
-  - O valor anterior (timestamp e tipo).
-  - O ID do administrador responsável.
-  - A justificativa da alteração.
-
-  O registro original de `ClockIn` é marcado com `is_edited: true`.
+  ## Retorno
+  - `{:ok, %{clock_in: %ClockIn{}, adjustment: %ClockInAdjustment{}}}`: Sucesso.
+  - `{:error, step, changeset, ...}`: Erro na transação.
   """
   def admin_update_clock_in(%ClockIn{} = clock_in, attrs, admin_id) do
     adjustment_attrs = %{
@@ -384,7 +396,23 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Cria um registro de ponto manualmente (Admin) com justificativa.
+  Cria um registro de ponto manualmente (inserção retroativa) por um administrador.
+
+  Diferente do registro comum, este método exige justificativa e cria imediatamente
+  um registro de auditoria (`ClockInAdjustment`) vinculado à criação.
+
+  ## Campos Especiais
+  - `origin`: Definido automaticamente como `:manual` se não informado.
+  - `is_edited`: Definido como `true` para indicar intervenção manual.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `attrs`: Atributos do ponto (timestamp, type, justification, observation).
+  - `admin_id`: ID do administrador.
+
+  ## Retorno
+  - `{:ok, %{clock_in: %ClockIn{}, adjustment: %ClockInAdjustment{}}}`: Sucesso.
+  - `{:error, ...}`: Falha na validação ou transação.
   """
   def admin_create_clock_in(employee_id, attrs, admin_id) do
     clock_in_attrs = %{
@@ -415,6 +443,24 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.transaction()
   end
 
+  @doc """
+  Invalida (anula) um registro de ponto existente.
+
+  Em vez de deletar o registro do banco, altera seu `status` para `:invalid`.
+  Isso garante que o registro não seja contabilizado nos cálculos, mas mantenha
+  o rastro de que ele existiu.
+  Gera registro de auditoria com a justificativa.
+
+  ## Parâmetros
+  - `clock_in`: O registro a ser invalidado.
+  - `justification`: Motivo da invalidação.
+  - `observation`: Detalhes adicionais.
+  - `admin_id`: ID do administrador.
+
+  ## Retorno
+  - `{:ok, map}`: Sucesso.
+  - `{:error, ...}`: Falha.
+  """
   def invalidate_clock_in(%ClockIn{} = clock_in, justification, observation, admin_id) do
     adjustment_attrs = %{
       "clock_in_id" => clock_in.id,
@@ -434,43 +480,30 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.transaction()
   end
 
+  @doc """
+  Retorna um changeset para criar ou atualizar um ajuste de ponto (`ClockInAdjustment`).
+  Utilizado para validação em formulários administrativos.
+
+  ## Retorno
+  - `%Ecto.Changeset{}`
+  """
   def change_adjustment(%ClockInAdjustment{} = adjustment, attrs \\ %{}) do
     ClockInAdjustment.changeset(adjustment, attrs)
-  end
-
-  @doc """
-  Deletes a clock_in.
-
-  ## Examples
-
-      iex> delete_clock_in(clock_in)
-      {:ok, %ClockIn{}}
-
-      iex> delete_clock_in(clock_in)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_clock_in(%ClockIn{} = clock_in) do
-    Repo.delete(clock_in)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking clock_in changes.
-
-  ## Examples
-
-      iex> change_clock_in(clock_in)
-      %Ecto.Changeset{data: %ClockIn{}}
-
-  """
-  def change_clock_in(%ClockIn{} = clock_in, attrs \\ %{}) do
-    ClockIn.changeset(clock_in, attrs)
   end
 
   # Abono de faltas
 
   @doc """
-  Cria um registro de abono de falta.
+  Registra um abono de falta para um funcionário.
+  Utilizado para justificar ausências (ex: atestado médico) e evitar desconto
+  no banco de horas ou folha de pagamento.
+
+  ## Parâmetros
+  - `attrs`: Map com `date`, `reason`, `employee_id`, etc.
+
+  ## Retorno
+  - `{:ok, %Absence{}}`: Sucesso.
+  - `{:error, changeset}`: Erro de validação.
   """
   def create_absence(attrs) do
     %Absence{}
@@ -479,8 +512,19 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Lista todos os abonos de um funcionario dentro de um periodo (mes).
-  Retorna um map para acesso rapido: %{Date => Absence}
+  Mapeia todos os abonos de um funcionário dentro de um período.
+
+  ## Retorno Otimizado
+  Retorna um mapa `%{Date => Absence}` para acesso rápido (O(1)) durante
+  o processamento do espelho de ponto (`get_monthly_report`), evitando iterações desnecessárias.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `start_date`: Início do período (`Date`).
+  - `end_date`: Fim do período (`Date`).
+
+  ## Retorno
+  - `%{Date => %Absence{}}`: Mapa de abonos indexado pela data.
   """
   def list_absences_map(employee_id, start_date, end_date) do
     from(a in Absence,
@@ -492,18 +536,40 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Remove um abono (caso o admin erre)
+  Remove permanentemente um abono do sistema.
+  Geralmente utilizado quando um abono foi lançado por engano pelo administrador.
+
+  ## Retorno
+  - `{:ok, %Absence{}}`: Sucesso.
+  - `{:error, changeset}`: Falha.
   """
   def delete_absence(%Absence{} = absence) do
     Repo.delete(absence)
   end
 
+  @doc """
+  Busca um abono específico pelo ID.
+
+  ## Retorno
+  - `%Absence{}`
+  - **Lança Erro:** `Ecto.NoResultsError` se não encontrado.
+  """
   def get_absence!(id), do: Repo.get!(Absence, id)
 
   # Feriados
   @doc """
-  Lista todos os feriados dentro de um periodo
-  Retorna um map para acesso rapido
+  Lista feriados em um intervalo, retornando um mapa para consulta rápida.
+
+  ## Formato do Retorno
+  `%{Date => String (Nome do Feriado)}`.
+  Utilizado para identificar dias em que a meta de trabalho deve ser zerada no cálculo do espelho.
+
+  ## Parâmetros
+  - `start_date`: Início do período.
+  - `end_date`: Fim do período.
+
+  ## Retorno
+  - `%{Date => String}`: Mapa de datas para nomes de feriados.
   """
   def list_holidays_map(start_date, end_date) do
     from(h in Holiday,
@@ -515,7 +581,15 @@ defmodule Pontodigital.Timekeeping do
   end
 
   @doc """
-  Cria um feriado
+  Cria um novo feriado no sistema.
+  Os feriados criados afetam o cálculo de horas de todos os funcionários.
+
+  ## Parâmetros
+  - `attrs`: Map com `date` e `name`.
+
+  ## Retorno
+  - `{:ok, %Holiday{}}`: Sucesso.
+  - `{:error, changeset}`: Erro.
   """
   def create_holiday(attrs) do
     %Holiday{}
@@ -523,43 +597,90 @@ defmodule Pontodigital.Timekeeping do
     |> Repo.insert()
   end
 
+  @doc """
+  Retorna um changeset para criar ou atualizar um feriado.
+  """
   def change_holiday(%Holiday{} = holiday, attrs \\ %{}) do
     Holiday.changeset(holiday, attrs)
   end
 
+  @doc """
+  Remove permanentemente um feriado do sistema.
+
+  ## Retorno
+  - `{:ok, %Holiday{}}`: Sucesso.
+  """
   def delete_holiday(%Holiday{} = holiday) do
     Repo.delete(holiday)
   end
 
+  @doc """
+  Retorna a lista completa de feriados cadastrados, ordenada por data.
+
+  ## Retorno
+  - `[%Holiday{}]`
+  """
   def list_all_holidays do
     Repo.all(from h in Holiday, order_by: [asc: h.date])
   end
 
+  @doc """
+  Busca um feriado específico pelo ID.
+  """
   def get_holiday!(id), do: Repo.get!(Holiday, id)
 
   # Vacation
+  @doc """
+  Registra um período de férias para um funcionário.
+
+  ## Parâmetros
+  - `attrs`: Map com `start_date`, `end_date`, `employee_id`.
+
+  ## Retorno
+  - `{:ok, %Vacation{}}`: Sucesso.
+  - `{:error, changeset}`: Erro.
+  """
   def create_vacation(attrs) do
     %Vacation{}
     |> Vacation.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Busca um registro de férias específico pelo ID.
+  """
   def get_vacation!(id) do
     Vacation
     |> Repo.get!(id)
   end
 
-  def list_vacations(employee_id) do
-    Vacation
-    |> where([v], v.employee_id == ^employee_id)
-    |> order_by([v], desc: v.start_date)
-    |> Repo.all()
-  end
+  @doc """
+  Remove um registro de férias do sistema.
 
+  ## Retorno
+  - `{:ok, %Vacation{}}`: Sucesso.
+  """
   def delete_vacation(%Vacation{} = vacation) do
     Repo.delete(vacation)
   end
 
+  @doc """
+  Mapeia os dias de férias de um funcionário dentro de um período de relatório.
+
+  ## Complexidade
+  Férias são persistidas como intervalos (`start_date` a `end_date`).
+  Esta função "explode" esses intervalos em dias individuais dentro do mês solicitado,
+  retornando um mapa `%{Date => Vacation}`.
+  Isso permite que o gerador de relatório verifique dia-a-dia se o funcionário estava de férias.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `start_date`: Início do período.
+  - `end_date`: Fim do período.
+
+  ## Retorno
+  - `%{Date => %Vacation{}}`: Mapa indexado por dia.
+  """
   def list_vacations_map(employee_id, start_date, end_date) do
     query =
       from v in Vacation,
@@ -586,17 +707,21 @@ defmodule Pontodigital.Timekeeping do
   Gera o relatório completo (espelho de ponto) de um funcionário para um mês específico.
 
   Esta função agrega dados de 5 fontes diferentes para compor a visualização diária:
-  1. **Pontos Batidos (`list_timesheet/4`):** Os registros brutos.
-  2. **Abonos (`list_absences_map/3`):** Faltas justificadas.
-  3. **Feriados (`list_holidays_map/2`):** Dias não úteis nacionais/locais.
-  4. **Férias (`list_vacations_map/3`):** Períodos de ausência remunerada.
-  5. **Diário de Bordo (`list_daily_logs_map/3`):** Anotações do funcionário.
+  1. **Pontos Batidos:** Os registros brutos.
+  2. **Abonos:** Faltas justificadas.
+  3. **Feriados:** Dias não úteis nacionais/locais.
+  4. **Férias:** Períodos de ausência remunerada.
+  5. **Diário de Bordo:** Anotações do funcionário.
 
   ## Processamento
   Para cada dia do mês, o sistema:
   - Carrega a carga horária esperada (`daily_meta`).
-  - Calcula o saldo do dia (crédito ou débito) usando `Calculator.calculate_daily_balance/5`.
+  - Calcula o saldo do dia (crédito ou débito) usando `Calculator`.
   - Resolve registros faltantes (ex: decidir se desconta falta ou se é feriado).
+
+  ## Parâmetros
+  - `employee`: Struct completa do funcionário (com `work_schedule` precarregado).
+  - `date`: Uma data dentro do mês desejado (ex: `Date.utc_today()`).
 
   ## Retorno
   Retorna um mapa contendo:
@@ -711,15 +836,34 @@ defmodule Pontodigital.Timekeeping do
 
   # Daily logs
   @doc """
-  Busca o log de atividades de um funcionário em uma data específica.
-  Retorna nil se não existir.
+  Busca o registro de atividades (diário) de um funcionário para uma data específica.
+
+  ## Parâmetros
+  - `employee_id`: ID do funcionário.
+  - `date`: Data do log.
+
+  ## Retorno
+  - `%DailyLog{}`: Se encontrado.
+  - `nil`: Se nenhum registro for encontrado para o dia.
   """
   def get_daily_log(employee_id, date) do
     Repo.get_by(DailyLog, employee_id: employee_id, date: date)
   end
 
   @doc """
-  Cria ou Atualiza o log de atividades do dia.
+  Persiste ou atualiza o diário de bordo de um dia (Upsert).
+
+  ## Comportamento
+  Verifica se já existe um log para o `employee_id` e `date` informados:
+  - **Se existir:** Atualiza o registro existente.
+  - **Se não existir:** Cria um novo registro.
+
+  ## Parâmetros
+  - `attrs`: Map com `employee_id`, `date` e campos do log.
+
+  ## Retorno
+  - `{:ok, %DailyLog{}}`: Sucesso.
+  - `{:error, changeset}`: Erro.
   """
   def save_daily_log(attrs) do
     employee_id = attrs["employee_id"] || attrs[:employee_id]

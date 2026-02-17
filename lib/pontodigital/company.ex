@@ -23,8 +23,12 @@ defmodule Pontodigital.Company do
   2. **Employee:** Cria o perfil profissional vinculado ao usuário criado.
   3. **Manager Link:** Se a flag `set_as_manager` estiver ativa, atualiza o Departamento correspondente para apontar este novo funcionário como gestor.
 
+  ## Parâmetros
+  - `attrs`: Mapa contendo os atributos mistos de usuário (email, senha) e funcionário (nome, cargo, etc).
+
   ## Retorno
-  Retorna `{:ok, map_results}` onde `map_results` contém as structs criadas, ou `{:error, step, reason, ...}` se qualquer etapa falhar.
+  - `{:ok, %{user: %User{}, employee: %Employee{}}}`: Sucesso na transação completa.
+  - `{:error, step, reason, changes}`: Falha em alguma etapa (user ou employee).
   """
   def register_employee_with_user(attrs) do
     Multi.new()
@@ -55,10 +59,31 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Constrói a query base para listagem, incluindo Joins e Filtros.
-  Não executa a query, apenas retorna o struct Ecto.Query.
+  Executa a query paginada e processa o status em memória.
+  Substitui a antiga list_employees_with_details.
   """
-  def list_employees_query(params \\ %{}) do
+  def list_employees_paginated(params \\ %{}) do
+    query = list_employees_query(params)
+
+    case Flop.validate_and_run(query, params, for: Employee) do
+      {:ok, {results, meta}} ->
+        employees_with_status =
+          Enum.map(results, fn %{employee: emp, user: user, last_clock_type: type} ->
+            status = derive_status(type)
+
+            emp
+            |> Map.put(:user, user)
+            |> Map.put(:status, status)
+          end)
+
+        {:ok, {employees_with_status, meta}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp list_employees_query(params) do
     search_term = params["q"] || ""
 
     department_id =
@@ -107,31 +132,6 @@ defmodule Pontodigital.Company do
         where: ilike(e.full_name, ^term) or ilike(u.email, ^term)
     else
       query
-    end
-  end
-
-  @doc """
-  Executa a query paginada e processa o status em memória.
-  Substitui a antiga list_employees_with_details.
-  """
-  def list_employees_paginated(params \\ %{}) do
-    query = list_employees_query(params)
-
-    case Flop.validate_and_run(query, params, for: Employee) do
-      {:ok, {results, meta}} ->
-        employees_with_status =
-          Enum.map(results, fn %{employee: emp, user: user, last_clock_type: type} ->
-            status = derive_status(type)
-
-            emp
-            |> Map.put(:user, user)
-            |> Map.put(:status, status)
-          end)
-
-        {:ok, {employees_with_status, meta}}
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
@@ -217,18 +217,14 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Gets a single employee.
+  Busca um funcionário pelo ID.
 
-  Raises `Ecto.NoResultsError` if the Employee does not exist.
+  ## Parâmetros
+  - `id`: Inteiro representando o ID do funcionário.
 
-  ## Examples
-
-      iex> get_employee!(123)
-      %Employee{}
-
-      iex> get_employee!(456)
-      ** (Ecto.NoResultsError)
-
+  ## Retorno
+  - `%Employee{}`: Struct do funcionário com `:user`, `:work_schedule` e `:department` precarregados.
+  - **Lança Erro:** `Ecto.NoResultsError` se não encontrar.
   """
   def get_employee!(id) do
     Employee
@@ -270,6 +266,16 @@ defmodule Pontodigital.Company do
     end
   end
 
+  @doc """
+  Busca o perfil de funcionário associado a um `user_id` de autenticação.
+
+  ## Parâmetros
+  - `user_id`: ID da tabela `users`.
+
+  ## Retorno
+  - `%Employee{}`: Funcionário encontrado (com preloads).
+  - `nil`: Se o usuário não tiver perfil de funcionário vinculado.
+  """
   def get_employee_by_user(user_id) do
     Repo.get_by(Employee, user_id: user_id)
   end
@@ -283,16 +289,15 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Creates a employee.
+  Cria um funcionário diretamente (sem criar usuário novo).
+  Utilizado principalmente via `seeds.exs` ou quando o usuário já existe.
 
-  ## Examples
+  ## Parâmetros
+  - `attrs`: Mapa de atributos do funcionário.
 
-      iex> create_employee(%{field: value})
-      {:ok, %Employee{}}
-
-      iex> create_employee(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  ## Retorno
+  - `{:ok, %Employee{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
   """
   def create_employee(attrs) do
     %Employee{}
@@ -301,16 +306,15 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Updates a employee.
+  Atualiza os dados de um funcionário existente.
 
-  ## Examples
+  ## Parâmetros
+  - `employee`: Struct do funcionário a ser atualizado.
+  - `attrs`: Novos atributos.
 
-      iex> update_employee(employee, %{field: new_value})
-      {:ok, %Employee{}}
-
-      iex> update_employee(employee, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  ## Retorno
+  - `{:ok, %Employee{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
   """
   def update_employee(%Employee{} = employee, attrs) do
     employee
@@ -319,82 +323,157 @@ defmodule Pontodigital.Company do
   end
 
   @doc """
-  Deletes a employee.
+  Remove um funcionário do sistema.
 
-  ## Examples
+  ## Parâmetros
+  - `employee`: Struct do funcionário a ser removido.
 
-      iex> delete_employee(employee)
-      {:ok, %Employee{}}
-
-      iex> delete_employee(employee)
-      {:error, %Ecto.Changeset{}}
-
+  ## Retorno
+  - `{:ok, %Employee{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro (ex: restrição de chave estrangeira se houver pontos vinculados).
   """
   def delete_employee(%Employee{} = employee) do
     Repo.delete(employee)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking employee changes.
+  Gera um changeset para formulários de funcionário.
 
-  ## Examples
-
-      iex> change_employee(employee)
-      %Ecto.Changeset{data: %Employee{}}
-
+  ## Retorno
+  - `%Ecto.Changeset{}`
   """
   def change_employee(%Employee{} = employee, attrs \\ %{}) do
     Employee.changeset(employee, attrs)
   end
 
   @doc """
-  Retorna a lista de jornadas de trabalho para usar em selects.
+  Lista todas as jornadas de trabalho cadastradas.
+
+  ## Retorno
+  - `[%WorkSchedule{}]`
   """
   def list_work_schedules do
     Repo.all(WorkSchedule)
   end
 
+  @doc """
+  Busca uma jornada de trabalho pelo ID.
+
+  ## Retorno
+  - `%WorkSchedule{}`
+  - **Lança Erro:** `Ecto.NoResultsError` se não encontrar.
+  """
   def get_work_schedule!(id), do: Repo.get!(WorkSchedule, id)
 
+  @doc """
+  Cria uma nova jornada de trabalho.
+
+  ## Parâmetros
+  - `attrs`: Atributos da jornada (nome, carga horária, dias de trabalho).
+
+  ## Retorno
+  - `{:ok, %WorkSchedule{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
+  """
   def create_work_schedule(attrs \\ %{}) do
     %WorkSchedule{}
     |> WorkSchedule.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Atualiza uma jornada de trabalho existente.
+
+  ## Parâmetros
+  - `work_schedule`: Struct original.
+  - `attrs`: Novos atributos.
+
+  ## Retorno
+  - `{:ok, %WorkSchedule{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
+  """
   def update_work_schedule(%WorkSchedule{} = work_schedule, attrs) do
     work_schedule
     |> WorkSchedule.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Remove uma jornada de trabalho.
+
+  ## Retorno
+  - `{:ok, %WorkSchedule{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro (ex: se houver funcionários vinculados).
+  """
   def delete_work_schedule(%WorkSchedule{} = work_schedule) do
     Repo.delete(work_schedule)
   end
 
+  @doc """
+  Gera um changeset para formulários de jornada.
+
+  ## Retorno
+  - `%Ecto.Changeset{}`
+  """
   def change_work_schedule(%WorkSchedule{} = work_schedule, attrs \\ %{}) do
     WorkSchedule.changeset(work_schedule, attrs)
   end
 
   @doc """
-  Retorna um %Ecto.Changeset{} para rastrear alterações no departamento.
+  Gera um changeset para formulários de departamento.
+
+  ## Retorno
+  - `%Ecto.Changeset{}`
   """
   def change_department(%Department{} = department, attrs \\ %{}) do
     Department.changeset(department, attrs)
   end
 
+  @doc """
+  Cria um novo departamento simples.
+
+  ## Parâmetros
+  - `attrs`: Atributos do departamento.
+
+  ## Retorno
+  - `{:ok, %Department{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
+  """
   def create_department(attrs \\ %{}) do
     %Department{}
     |> Department.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Define um funcionário como gestor de um departamento.
+
+  ## Parâmetros
+  - `department_id`: ID do departamento.
+  - `manager_id`: ID do funcionário que será o novo gestor.
+
+  ## Retorno
+  - `{:ok, %Department{}}`: Departamento atualizado.
+  - `{:error, %Ecto.Changeset{}}`: Erro na atualização.
+  """
   def set_department_manager(department_id, manager_id) do
     Repo.get!(Department, department_id)
     |> Ecto.Changeset.change(manager_id: manager_id)
     |> Repo.update()
   end
 
+  @doc """
+  Cria um departamento e, atomicamente, cria e vincula seu gestor.
+  Executa uma transação para garantir que o departamento não seja criado sem o gestor (se os dados forem fornecidos juntos).
+
+  ## Parâmetros
+  - `dept_attrs`: Atributos do departamento (nome).
+  - `manager_attrs`: Atributos do funcionário gestor.
+
+  ## Retorno
+  - `{:ok, %Department{}}`: Sucesso (retorna o departamento com o gestor vinculado).
+  - `{:error, reason}`: Falha na transação.
+  """
   def create_department_with_manager(dept_attrs, manager_attrs) do
     Repo.transaction(fn ->
       dept = Repo.insert!(%Department{name: dept_attrs.name})
@@ -408,6 +487,12 @@ defmodule Pontodigital.Company do
     end)
   end
 
+  @doc """
+  Lista todos os departamentos.
+
+  ## Retorno
+  - `[%Department{}]`: Lista com o gestor (`:manager`) precarregado.
+  """
   def list_departments do
     Department
     |> Repo.all()
@@ -416,8 +501,16 @@ defmodule Pontodigital.Company do
 
   @doc """
   Retorna a lista de departamentos que o usuário atual pode selecionar num formulário.
-  - Master: Todos os departamentos.
-  - Admin (Gerente): Apenas o próprio departamento.
+
+  ## Regra de Escopo
+  - **Master:** Pode ver e selecionar todos os departamentos.
+  - **Admin (Gestor):** Pode ver e selecionar apenas o seu próprio departamento.
+
+  ## Parâmetros
+  - `current_employee`: Struct do funcionário logado.
+
+  ## Retorno
+  - `[%Department{}]`: Lista filtrada de departamentos.
   """
   def list_departments_for_select(%Employee{} = current_employee) do
     current_employee = Repo.preload(current_employee, :user)
@@ -430,16 +523,41 @@ defmodule Pontodigital.Company do
     end
   end
 
+  @doc """
+  Busca um departamento pelo ID.
+
+  ## Retorno
+  - `%Department{}`
+  - **Lança Erro:** `Ecto.NoResultsError` se não encontrar.
+  """
   def get_department!(id) do
     Repo.get!(Department, id)
   end
 
+  @doc """
+  Atualiza os dados de um departamento.
+
+  ## Parâmetros
+  - `department`: Struct original.
+  - `attrs`: Novos atributos.
+
+  ## Retorno
+  - `{:ok, %Department{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro de validação.
+  """
   def update_department(%Department{} = department, attrs) do
     department
     |> Department.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Remove um departamento.
+
+  ## Retorno
+  - `{:ok, %Department{}}`: Sucesso.
+  - `{:error, %Ecto.Changeset{}}`: Erro (ex: se houver funcionários vinculados).
+  """
   def delete_department(%Department{} = department) do
     Repo.delete(department)
   end

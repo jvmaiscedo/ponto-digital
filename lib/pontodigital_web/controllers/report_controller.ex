@@ -43,12 +43,13 @@ defmodule PontodigitalWeb.ReportController do
 
   defp path_to(user, target_id) do
     case user.role do
-      :admin -> ~p"/admin/gestao-pessoas/funcionarios/:#{target_id}"
+      :admin -> ~p"/admin/gestao-pessoas/funcionarios/#{target_id}"
+      :master -> ~p"/admin/gestao-pessoas/funcionarios/#{target_id}"
       :employee -> ~p"/workspace/historico"
     end
   end
 
-  defp authorized?(%{role: :admin}, _target_id), do: true
+  defp authorized?(%{role: role}, _target_id) when role in [:admin, :master], do: true
 
   defp authorized?(%{id: user_id}, target_id) do
     case Pontodigital.Company.get_employee_by_user(user_id) do
@@ -65,12 +66,13 @@ defmodule PontodigitalWeb.ReportController do
       _ -> "timesheet"
     end
   end
+
   defp define_payload(employee, month, year) do
     case employee.work_schedule.name do
-     "Padrão 8h" -> TimesheetData.build(employee, month, year)
-    "Estagio Cetep" -> TimesheetData.build(employee, month, year)
-    "PETI" -> TimesheetData.build_weekly_payload(employee, month, year)
-    _ -> TimesheetData.build(employee, month, year)
+      "Padrão 8h" -> TimesheetData.build(employee, month, year)
+      "Estagio Cetep" -> TimesheetData.build(employee, month, year)
+      "PETI" -> TimesheetData.build_weekly_payload(employee, month, year)
+      _ -> TimesheetData.build(employee, month, year)
     end
   end
 end
