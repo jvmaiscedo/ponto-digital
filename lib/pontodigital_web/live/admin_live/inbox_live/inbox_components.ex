@@ -10,11 +10,17 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
   def messages_table(assigns) do
     ~H"""
     <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm flex flex-col">
+      <% return_to =
+        if @meta, do: Flop.Phoenix.build_path(~p"/admin/inbox", @meta), else: ~p"/admin/inbox" %>
       <Flop.Phoenix.table
         items={@messages}
         meta={@meta}
         path={~p"/admin/inbox"}
-        row_click={fn {_id, message} -> JS.navigate(~p"/admin/inbox/#{message.id}") end}
+        row_click={
+          fn {_id, message} ->
+            JS.navigate(~p"/admin/inbox/#{message.id}?#{[return_to: return_to]}")
+          end
+        }
         opts={[
           table_attrs: [class: "min-w-full divide-y divide-gray-200 dark:divide-zinc-700"],
           thead_attrs: [class: "bg-gray-50 dark:bg-zinc-900"],
@@ -136,7 +142,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
             <% end %>
 
             <.link
-              navigate={~p"/admin/inbox/#{message.id}"}
+              navigate={~p"/admin/inbox/#{message.id}?#{[return_to: return_to]}"}
               class="p-1.5 rounded-full text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
             >
               <.icon name="hero-chevron-right" class="size-5" />
@@ -145,16 +151,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
         </:col>
       </Flop.Phoenix.table>
 
-      <div class="
-        p-4 border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 flex justify-center
-        [&_nav]:flex [&_nav]:justify-center
-        [&_ul]:flex [&_ul]:flex-wrap [&_ul]:gap-1 [&_ul]:items-center
-        [&_a]:px-3 [&_a]:py-1 [&_a]:rounded-md [&_a]:text-sm [&_a]:font-medium [&_a]:text-gray-600 dark:[&_a]:text-gray-400 [&_a]:transition-all
-        [&_a:hover]:bg-white dark:[&_a:hover]:bg-zinc-800 [&_a:hover]:text-indigo-600 dark:[&_a:hover]:text-indigo-400 [&_a:hover]:shadow-sm [&_a:hover]:ring-1 [&_a:hover]:ring-gray-200 dark:[&_a:hover]:ring-zinc-700
-        [&_span]:px-3 [&_span]:py-1 [&_span]:text-sm
-        [&_span.current]:font-bold [&_span.current]:bg-indigo-600 [&_span.current]:text-white [&_span.current]:rounded-md [&_span.current]:shadow-sm
-        [&_span.disabled]:text-gray-300 dark:[&_span.disabled]:text-zinc-600 [&_span.disabled]:cursor-not-allowed
-      ">
+      <div class="p-4 border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 flex justify-center [&_nav]:flex [&_nav]:justify-center [&_ul]:flex [&_ul]:flex-wrap [&_ul]:gap-1 [&_ul]:items-center [&_a]:px-3 [&_a]:py-1 [&_a]:rounded-md [&_a]:text-sm [&_a]:font-medium [&_a]:text-gray-600 dark:[&_a]:text-gray-400 [&_a]:transition-all [&_a:hover]:bg-white dark:[&_a:hover]:bg-zinc-800 [&_a:hover]:text-indigo-600 dark:[&_a:hover]:text-indigo-400 [&_a:hover]:shadow-sm [&_a:hover]:ring-1 [&_a:hover]:ring-gray-200 dark:[&_a:hover]:ring-zinc-700 [&_span]:px-3 [&_span]:py-1 [&_span]:text-sm [&_span.current]:font-bold [&_span.current]:bg-indigo-600 [&_span.current]:text-white [&_span.current]:rounded-md [&_span.current]:shadow-sm [&_span.disabled]:text-gray-300 dark:[&_span.disabled]:text-zinc-600 [&_span.disabled]:cursor-not-allowed">
         <Flop.Phoenix.pagination
           meta={@meta}
           path={~p"/admin/inbox"}

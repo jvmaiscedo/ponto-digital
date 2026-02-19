@@ -18,9 +18,15 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.Show do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _uri, socket) do
+  def handle_params(params, _uri, socket) do
+    id = params["id"]
+    return_to = params["return_to"] || ~p"/admin/gestao-pessoas/funcionarios"
     data_atual = Date.utc_today()
-    {:noreply, load_timesheet(socket, id, data_atual)}
+
+    {:noreply,
+     socket
+     |> assign(:return_to, return_to)
+     |> load_timesheet(id, data_atual)}
   end
 
   @impl true

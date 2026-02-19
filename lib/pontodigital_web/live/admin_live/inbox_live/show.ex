@@ -9,7 +9,10 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.Show do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _uri, socket) do
+  def handle_params(params, _uri, socket) do
+    id = params["id"]
+    return_to = params["return_to"] || ~p"/admin/inbox"
+
     message =
       Communication.get_inbox_message!(id)
       |> Repo.preload(:employee)
@@ -18,6 +21,9 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.Show do
       Communication.mark_as_read(message)
     end
 
-    {:noreply, assign(socket, :message, message)}
+    {:noreply,
+     socket
+     |> assign(:message, message)
+     |> assign(:return_to, return_to)}
   end
 end

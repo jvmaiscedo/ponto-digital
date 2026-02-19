@@ -115,7 +115,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
           ]}
         >
           <div class="flex justify-center">
-            <.action_buttons employee={employee} />
+            <.action_buttons employee={employee} meta={@meta} />
           </div>
         </:col>
       </FlopUI.table>
@@ -364,6 +364,7 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
   end
 
   attr :employee, :any, required: true
+  attr :meta, Flop.Meta, default: nil
 
   defp action_buttons(assigns) do
     ~H"""
@@ -386,8 +387,12 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
         <.icon name="hero-calendar" class="size-5" />
       </.link>
 
+      <% return_to =
+        if @meta,
+          do: FlopUI.build_path(~p"/admin/gestao-pessoas/funcionarios", @meta),
+          else: ~p"/admin/gestao-pessoas/funcionarios" %>
       <.link
-        navigate={~p"/admin/gestao-pessoas/funcionarios/#{@employee.id}"}
+        navigate={~p"/admin/gestao-pessoas/funcionarios/#{@employee.id}?#{[return_to: return_to]}"}
         class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         aria-label="Ver Espelho"
         title="Ver Espelho"
