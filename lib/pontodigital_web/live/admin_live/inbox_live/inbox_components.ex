@@ -112,7 +112,7 @@ def messages_table(assigns) do
               <button
                 phx-click="mark_as_read"
                 phx-value-id={message.id}
-                class="p-1.5 rounded-full text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                class="p-1.5 rounded-full text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                 title="Marcar como lido"
               >
                 <.icon name="hero-check" class="size-5" />
@@ -123,7 +123,7 @@ def messages_table(assigns) do
               <.link
                 href={message.attachment_path}
                 target="_blank"
-                class="p-1.5 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                class="p-1.5 rounded-full text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                 title="Ver anexo"
               >
                 <.icon name="hero-paper-clip" class="size-5" />
