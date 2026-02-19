@@ -47,9 +47,6 @@ defmodule PontodigitalWeb.AdminLive.EmployeeManagement.EmployeeComponents do
           </div>
         </form>
       </div>
-      <div class="hidden sm:block">
-        <PontodigitalWeb.Layouts.theme_toggle />
-      </div>
     </div>
     """
   end
