@@ -13,20 +13,39 @@
     <script>
       (() => {
         const setTheme = (theme) => {
+          let resolvedTheme = theme;
+          
           if (theme === "system") {
             localStorage.removeItem("phx:theme");
-            document.documentElement.removeAttribute("data-theme");
+            resolvedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
           } else {
             localStorage.setItem("phx:theme", theme);
-            document.documentElement.setAttribute("data-theme", theme);
           }
+          
+          // Estado de renderizacao CSS
+          document.documentElement.setAttribute("data-theme", resolvedTheme);
+          // Estado de controle do componente UI
+          document.documentElement.setAttribute("data-theme-control", theme);
         };
-        if (!document.documentElement.hasAttribute("data-theme")) {
+
+        if (!document.documentElement.hasAttribute("data-theme-control")) {
           setTheme(localStorage.getItem("phx:theme") || "system");
         }
-        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+        window.addEventListener("storage", (e) => {
+          if (e.key === "phx:theme") setTheme(e.newValue || "system");
+        });
         
-        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+        window.addEventListener("phx:set-theme", (e) => {
+          const btn = e.target.closest('[data-phx-theme]');
+          if (btn) setTheme(btn.dataset.phxTheme);
+        });
+
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+          if (!localStorage.getItem("phx:theme")) {
+            setTheme("system");
+          }
+        });
       })();
     </script>
   </head>
