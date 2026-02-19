@@ -6,27 +6,20 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
 
   attr :messages, :list, required: true
   attr :meta, :map, required: true
-
-  def messages_table(assigns) do
+def messages_table(assigns) do
     ~H"""
     <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm flex flex-col">
-      <% return_to =
-        if @meta, do: Flop.Phoenix.build_path(~p"/admin/inbox", @meta), else: ~p"/admin/inbox" %>
+      <% return_to = if @meta, do: Flop.Phoenix.build_path(~p"/admin/inbox", @meta), else: ~p"/admin/inbox" %>
       <Flop.Phoenix.table
         items={@messages}
         meta={@meta}
         path={~p"/admin/inbox"}
-        row_click={
-          fn {_id, message} ->
-            JS.navigate(~p"/admin/inbox/#{message.id}?#{[return_to: return_to]}")
-          end
-        }
+        row_click={fn {_id, message} -> JS.navigate(~p"/admin/inbox/#{message.id}?#{[return_to: return_to]}") end}
         opts={[
           table_attrs: [class: "min-w-full divide-y divide-gray-200 dark:divide-zinc-700"],
           thead_attrs: [class: "bg-gray-50 dark:bg-zinc-900"],
           thead_th_attrs: [
-            class:
-              "px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500 dark:text-zinc-400"
+            class: "px-6 py-3 text-xs font-medium uppercase tracking-wider text-left text-gray-500 dark:text-zinc-400"
           ],
           tbody_attrs: [
             class: "bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700",
@@ -46,8 +39,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
           label="Data"
           field={:context_date}
           thead_th_attrs={[
-            class:
-              "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
+            class: "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
           ]}
         >
           <div class="text-center font-medium text-gray-900 dark:text-zinc-100">
@@ -60,8 +52,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
           label="Categoria"
           field={:category}
           thead_th_attrs={[
-            class:
-              "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
+            class: "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
           ]}
         >
           <div class="flex justify-center">
@@ -93,8 +84,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
           label="Status"
           field={:read_at}
           thead_th_attrs={[
-            class:
-              "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
+            class: "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400"
           ]}
         >
           <div class="flex justify-center">
@@ -114,11 +104,10 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
           :let={{_id, message}}
           label="Ações"
           thead_th_attrs={[
-            class:
-              "px-6 py-3 text-xs font-medium uppercase tracking-wider text-right text-gray-500 dark:text-zinc-400"
+            class: "px-6 py-3 text-xs font-medium uppercase tracking-wider text-center text-gray-500 dark:text-zinc-400 w-[140px]"
           ]}
         >
-          <div class="flex items-center justify-end gap-2" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-end gap-2 shrink-0" onclick="event.stopPropagation()">
             <%= unless message.read_at do %>
               <button
                 phx-click="mark_as_read"
@@ -141,7 +130,7 @@ defmodule PontodigitalWeb.AdminLive.InboxLive.InboxComponents do
               </.link>
             <% end %>
 
-            <.link
+             <.link
               navigate={~p"/admin/inbox/#{message.id}?#{[return_to: return_to]}"}
               class="p-1.5 rounded-full text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
             >
